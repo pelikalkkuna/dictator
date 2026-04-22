@@ -1,5 +1,14 @@
 # Dictator — Ritimban Republic
 
+## Nykyinen tila
+
+Päivitetty: huhtikuu 2026
+
+- **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii (`gh` CLI + auth), push/pull toimii
+- **GDD:** `GDD.md` luotu suoraan `Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
+- **Pelikoodi:** ei yhtään koodiriviä vielä — puhdas pöytä
+- **Seuraava askel:** pelin rakentaminen alkaa, ensimmäisenä minimaalinen HTML-runko ja pelitila-objekti
+
 ## Projektin kuvaus
 
 Vuoropohjainen selviytymisstrategia, jossa pelaaja on 1960–70-lukujen latinalaisamerikkalaisen Ritimban tasavallan diktaattori. Pohjautuu Don Priestleyn ja Andy Frenchin peliin (DKTronics, 1983 — Commodore 64 / ZX Spectrum). Tämä on selainpohjainen moderni remake.
