@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #1a1a1a;
+  color: #eee;
+}
+
+#peli {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+}
