@@ -29,6 +29,10 @@ function piirraAudienssi(nykyinenAudienssi) {
   const audienssiEl = document.getElementById("audienssi");
   const tekstiEl = document.getElementById("audienssi-teksti");
   const napitEl = document.getElementById("audienssi-napit");
+  const vihjeEl = document.getElementById("audienssi-swipe-vihje");
+
+  audienssiEl.style.transform = "";
+  audienssiEl.style.opacity = "";
 
   if (!nykyinenAudienssi) {
     audienssiEl.classList.add("piilossa");
@@ -41,9 +45,11 @@ function piirraAudienssi(nykyinenAudienssi) {
   if (nykyinenAudienssi.pakkoEi) {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus + " — PAKKO-EI (kassakriisi estää rahallisen vaatimuksen)";
     napitEl.style.display = "none";
+    vihjeEl.style.display = "none";
   } else {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus;
     napitEl.style.display = "";
+    vihjeEl.style.display = "";
   }
 }
 

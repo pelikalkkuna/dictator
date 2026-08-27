@@ -12,6 +12,16 @@ body {
   text-align: center;
 }
 
+@media (max-width: 400px) {
+  #peli {
+    padding: 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+
 .kassaraportti {
   border-left: 4px solid #2e8b2e;
   background: #202a20;
@@ -45,6 +55,23 @@ body {
 
 .audienssi.piilossa {
   display: none;
+}
+
+#audienssi {
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+#audienssi:active {
+  cursor: grabbing;
+}
+
+.swipe-vihje {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin: 0.5rem 0 0;
 }
 
 #audienssi-napit button,
@@ -131,6 +158,13 @@ body {
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
+  min-height: 44px;
+  font-size: 1rem;
+}
+
+select {
+  min-height: 44px;
+  font-size: 1rem;
 }
 
 #seuraava-kuukausi-nappi:disabled {
