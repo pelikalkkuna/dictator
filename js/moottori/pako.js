@@ -1,14 +1,17 @@
 // GDD 11: pako.
 //
-// HUOM (assumptio): GDD sanoo vuoristopaon onnistuvan kun "sissien voima on matala" ilman
-// tarkkaa lukua. Käytetty raja <= 2 (sissit alkavat voimalla 6, joten pako onnistuu käytännössä
-// vain jos sissejä on merkittävästi heikennetty - vastaa GDD:n omaa huomiota "sissit käytännössä
-// aina uhka"). Ks. CLAUDE.md muistiinpanot.
+// Sasu (elokuu 2026): vuoristopako on todennäköisyys, ei terävä raja - "mikäli sissien voima
+// on pieni ei vuoristossa ole silmiä havaitsemassa pakenevaa diktaattoria, mutta kun sissien
+// voima on suuri jää aina kiinni". PakoTodennäköisyys = 1 - sissienVoima/9 (mittariasteikko
+// 0-9): voima 0 -> aina onnistuu, voima 9 -> aina kiinni.
 
-const VUORISTOPAKO_SISSIT_RAJA = 2;
+function vuoristopaonTodennakoisyys(pelitila) {
+  return 1 - (pelitila.ryhmat.sissit.voima / 9);
+}
 
-function yritaVuoristopako(pelitila) {
-  return { reitti: "vuoristo", onnistui: pelitila.ryhmat.sissit.voima <= VUORISTOPAKO_SISSIT_RAJA };
+function yritaVuoristopako(pelitila, heittoFn) {
+  const heitto = heittoFn || Math.random;
+  return { reitti: "vuoristo", onnistui: heitto() < vuoristopaonTodennakoisyys(pelitila) };
 }
 
 // GDD 3.5/11: helikopteripako vaatii D12:n ostetun helikopterin. 75% onnistuu suoraan,
@@ -18,7 +21,7 @@ function yritaHelikopteripako(pelitila, heittoFn) {
   if (heitto() < 0.75) {
     return { reitti: "helikopteri", onnistui: true };
   }
-  const vuoristo = yritaVuoristopako(pelitila);
+  const vuoristo = yritaVuoristopako(pelitila, heittoFn);
   return { reitti: "vuoristo (helikopteri rikki)", onnistui: vuoristo.onnistui };
 }
 
@@ -26,9 +29,9 @@ function pakene(pelitila, heittoFn) {
   if (pelitila.helikopteriOstettu) {
     return yritaHelikopteripako(pelitila, heittoFn);
   }
-  return yritaVuoristopako(pelitila);
+  return yritaVuoristopako(pelitila, heittoFn);
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { yritaVuoristopako, yritaHelikopteripako, pakene };
+  module.exports = { vuoristopaonTodennakoisyys, yritaVuoristopako, yritaHelikopteripako, pakene };
 }
