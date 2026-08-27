@@ -7,8 +7,9 @@ Päivitetty: elokuu 2026
 - **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii, push/pull toimii
 - **GDD:** `docs/GDD.md` luotu suoraan `docs/Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
 - **Materiaali:** `materiaali/`-kansiossa mainoskuva ja voittomarssi (myöhempää web-mainontaa varten)
-- **Pelikoodi:** kohta 1 valmis — minimaalinen runko toimii selaimessa (`index.html`, `js/pelitila.js`, `js/nakyma/piirto.js`, `js/paa.js`, `css/tyyli.css`)
-- **Seuraava askel:** kohta 2 toteutusjärjestyksestä — kassajärjestelmä (kassaraportti, kuukausikulut, kassan kuivuminen)
+- **Pelikoodi:** kohdat 1–3 valmiit — runko, kassajärjestelmä (kassaraportti, kuukausikulut 45k/kk, kassakriisi-tila) ja ryhmät/mittarit (8 ryhmää GDD 2.2:n aloitusarvoin, mittarien 0–9 rajaus) toimivat selaimessa. "Seuraava kuukausi" -nappi testauksen ajaksi, korvataan varsinaisella kuukausikierroksella myöhemmässä vaiheessa.
+- **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 7 testiä kattaa kassaraportin laskennan ja mittarien rajauksen, kaikki vihreää
+- **Seuraava askel:** kohta 4 toteutusjärjestyksestä — audienssijärjestelmä (D3, kortit, hyväksy/hylkää)
 
 ## Projektin kuvaus
 
