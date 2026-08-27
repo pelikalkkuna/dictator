@@ -7,9 +7,9 @@ Päivitetty: elokuu 2026
 - **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii, push/pull toimii
 - **GDD:** `docs/GDD.md` luotu suoraan `docs/Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
 - **Materiaali:** `materiaali/`-kansiossa mainoskuva ja voittomarssi (myöhempää web-mainontaa varten)
-- **Pelikoodi:** kohdat 1–4 valmiit — runko, kassajärjestelmä (kassaraportti, kuukausikulut 45k/kk, kassakriisi-tila), ryhmät/mittarit (8 ryhmää GDD 2.2:n aloitusarvoin, mittarien 0–9 rajaus) ja audienssijärjestelmä (kaikki 42 korttia GDD 5.1–5.3:sta, D3-valinta pakkalogiikkoineen, hyväksy/hylkää, pakko-EI kassakriisissä) toimivat selaimessa. "Seuraava kuukausi" -nappi testauksen ajaksi, korvataan varsinaisella kuukausikierroksella myöhemmässä vaiheessa.
-- **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 18 testiä kattaa kassaraportin laskennan, mittarien rajauksen ja audienssimekaniikan (kortin valinta, hyväksyntä/hylkäys, pakko-EI, korttien poisto pakasta), kaikki vihreää
-- **Seuraava askel:** kohta 5 toteutusjärjestyksestä — presidentin päätökset (D1–D19)
+- **Pelikoodi:** kohdat 1–5 valmiit — runko, kassajärjestelmä, ryhmät/mittarit, audienssijärjestelmä (42 korttia) ja presidentin päätökset (kaikki 19 korttia GDD 6.1–6.5:stä: geneeriset suosio/voima/talous-päätökset, D11 henkivartijoiden vahvistus, D13 Sveitsin tilin erikoismekaniikka, D14/D15 suurvalta-avun porrastettu summataulukko) toimivat selaimessa. "Seuraava kuukausi" -nappi testauksen ajaksi, korvataan varsinaisella kuukausikierroksella myöhemmässä vaiheessa.
+- **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 28 testiä kattaa kassaraportin, mittarien rajauksen, audienssimekaniikan ja presidentin päätökset (suurvalta-apu, Sveitsin tili, kertakäyttöisyys, kassakriisilukitus), kaikki vihreää
+- **Seuraava askel:** kohta 6 toteutusjärjestyksestä — uutisvaihe (48 korttia)
 
 ## Projektin kuvaus
 

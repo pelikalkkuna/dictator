@@ -21,7 +21,9 @@ const pelitila = {
   },
 
   // Täytetään käynnistyksessä luoAudienssipakat(audienssikortit):llä.
-  audienssipakat: { armeija: [], talonpojat: [], maanomistajat: [] }
+  audienssipakat: { armeija: [], talonpojat: [], maanomistajat: [] },
+
+  kaytetytPaatokset: []
 };
 
 if (typeof module !== "undefined") {

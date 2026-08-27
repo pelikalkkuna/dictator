@@ -46,3 +46,26 @@ function piirraAudienssi(nykyinenAudienssi) {
     napitEl.style.display = "";
   }
 }
+
+function piirraPaatosvalinta(naytetaanko) {
+  const paatosEl = document.getElementById("paatos");
+
+  if (!naytetaanko) {
+    paatosEl.classList.add("piilossa");
+    return;
+  }
+  paatosEl.classList.remove("piilossa");
+
+  const valintaEl = document.getElementById("paatos-valinta");
+  valintaEl.innerHTML = "";
+  const kaytettavissa = paatoskortit.filter(p => onkoPaatosKaytettavissa(pelitila, p));
+
+  for (const paatos of kaytettavissa) {
+    const optio = document.createElement("option");
+    optio.value = paatos.id;
+    optio.textContent = paatos.id + ": " + paatos.paatos;
+    valintaEl.appendChild(optio);
+  }
+
+  document.getElementById("paatos-toteuta-nappi").disabled = kaytettavissa.length === 0;
+}

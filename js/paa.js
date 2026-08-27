@@ -1,4 +1,5 @@
 let nykyinenAudienssi = null;
+let paatosOdottaa = false;
 
 function piirraKaikki() {
   piirraKuukausi();
@@ -7,8 +8,20 @@ function piirraKaikki() {
 }
 
 function asetaSeuraavaKuukausiNappiTila() {
-  const odottaaVastausta = nykyinenAudienssi && !nykyinenAudienssi.pakkoEi;
-  document.getElementById("seuraava-kuukausi-nappi").disabled = !!odottaaVastausta;
+  const audienssiOdottaa = nykyinenAudienssi && !nykyinenAudienssi.pakkoEi;
+  document.getElementById("seuraava-kuukausi-nappi").disabled = !!audienssiOdottaa || paatosOdottaa;
+}
+
+function naytaPaatosvalinta() {
+  paatosOdottaa = true;
+  piirraPaatosvalinta(true);
+  asetaSeuraavaKuukausiNappiTila();
+}
+
+function suljePaatosvalinta() {
+  paatosOdottaa = false;
+  piirraPaatosvalinta(false);
+  asetaSeuraavaKuukausiNappiTila();
 }
 
 function aloitaAudienssi() {
@@ -16,15 +29,19 @@ function aloitaAudienssi() {
 
   if (!tulos) {
     nykyinenAudienssi = null;
+    piirraAudienssi(null);
+    naytaPaatosvalinta();
   } else if (onkoPakkoEi(pelitila, tulos.kortti)) {
     hylkaaAudienssi(pelitila, tulos.ryhmaAvain, tulos.kortti);
     nykyinenAudienssi = { ryhmaAvain: tulos.ryhmaAvain, kortti: tulos.kortti, pakkoEi: true };
     piirraKaikki();
+    piirraAudienssi(nykyinenAudienssi);
+    naytaPaatosvalinta();
   } else {
     nykyinenAudienssi = tulos;
+    piirraAudienssi(nykyinenAudienssi);
   }
 
-  piirraAudienssi(nykyinenAudienssi);
   asetaSeuraavaKuukausiNappiTila();
 }
 
@@ -40,7 +57,17 @@ function ratkaiseAudienssi(hyvaksytty) {
   nykyinenAudienssi = null;
   piirraKaikki();
   piirraAudienssi(null);
-  asetaSeuraavaKuukausiNappiTila();
+  naytaPaatosvalinta();
+}
+
+function toteutaValittuPaatos() {
+  const valintaEl = document.getElementById("paatos-valinta");
+  const paatos = paatoskortit.find(p => p.id === valintaEl.value);
+  if (paatos) {
+    toteutaPaatos(pelitila, paatos);
+    piirraKaikki();
+  }
+  suljePaatosvalinta();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -48,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   piirraKaikki();
   piirraAudienssi(null);
+  piirraPaatosvalinta(false);
 
   document.getElementById("seuraava-kuukausi-nappi").addEventListener("click", () => {
     pelitila.kuukausi += 1;
@@ -58,4 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("hyvaksy-nappi").addEventListener("click", () => ratkaiseAudienssi(true));
   document.getElementById("hylkaa-nappi").addEventListener("click", () => ratkaiseAudienssi(false));
+
+  document.getElementById("paatos-toteuta-nappi").addEventListener("click", toteutaValittuPaatos);
+  document.getElementById("paatos-ohita-nappi").addEventListener("click", suljePaatosvalinta);
 });
