@@ -16,8 +16,9 @@
 //   N6_POLIISI_NOLLAAN  — salaisen poliisin suosio JA voima asetetaan 0:aan.
 //   N7_LEFTOTO_PUOLITA  — Leftoton voima puolitetaan (pyöristys alas).
 //
-// N12: "−5k/kk (til.)" — "(til.)" viittaa tilapäisyyteen jota GDD ei määrittele (kesto?).
-// Toteutettu toistaiseksi pysyvänä kuukausikulutMuutoksena. Ks. CLAUDE.md muistiinpanot.
+// N12: GDD:n "−5k/kk (til.)" oli täysin uusi, ei-simuloitu kortti - Sasu (elokuu 2026):
+// "pikainen pieni huono uutinen", tarkoitettu kertaluontoiseksi 1 kk:n 5000:n kustannukseksi,
+// ei pysyväksi kuukausikuluksi. Toteutettu kertaluontoisena kassavaikutuksena.
 
 const uutiskortit = {
   isot: [
@@ -48,7 +49,7 @@ const uutiskortit = {
     { id: "N11", tapahtuma: "Kenraali kiinni sikarien salakuljetuksesta",
       suosio: { armeija: -1, talonpojat: 1 }, kertaluontoinen: 20000 },
     { id: "N12", tapahtuma: "Rankkasateet viivästyttävät kahvisatoa",
-      suosio: { talonpojat: -1, maanomistajat: -1 }, kuukausikulutMuutos: 5000 },
+      suosio: { talonpojat: -1, maanomistajat: -1 }, kertaluontoinen: -5000 },
     { id: "N13", tapahtuma: "Neuvostoliiton valtionbaletti esiintyy",
       suosio: { venaja: 2, usa: -2, leftoto: 1 } },
     { id: "N14", tapahtuma: "Mysteerisukellusvene havaittu rannikolla",

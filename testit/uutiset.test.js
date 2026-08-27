@@ -84,6 +84,13 @@ test("N5 puolittaa maanomistajien suosion ja nostaa kuukausikulut +5000", () => 
   assert.equal(tila.kuukausikulut, 45000 + 5000);
 });
 
+test("N12 on kertaluontoinen 5000:n kustannus, ei pysyvä kuukausikulu", () => {
+  const tila = uusiTila();
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N12"));
+  assert.equal(tila.kassa, 1000000 - 5000);
+  assert.equal(tila.kuukausikulut, 45000); // ei muutu
+});
+
 test("N4 puolittaa armeijan voiman pyöristäen alas", () => {
   const tila = uusiTila();
   tila.ryhmat.armeija.voima = 7;
