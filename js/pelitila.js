@@ -35,8 +35,12 @@ const pelitila = {
   sotaVelkaKuukausiaJaljella: 0,
   vallankumousvoimaPalautusJaljella: 0,
 
+  // GDD 3.5/11: pako.
+  helikopteriOstettu: false,
+
   peliOhi: false,
-  peliOhiViesti: ""
+  peliOhiViesti: "",
+  peliOhiPisteet: null
 };
 
 if (typeof module !== "undefined") {

@@ -137,13 +137,37 @@ function piirraAttentaatti(viesti) {
   document.getElementById("attentaatti-teksti").textContent = viesti;
 }
 
-function piirraPeliOhi(viesti) {
+function piirraPeliOhi(viesti, pisteet) {
   const peliOhiEl = document.getElementById("peli-ohi");
+  const pisteetEl = document.getElementById("peli-ohi-pisteet");
 
   if (!viesti) {
     peliOhiEl.classList.add("piilossa");
+    pisteetEl.classList.add("piilossa");
     return;
   }
   peliOhiEl.classList.remove("piilossa");
   document.getElementById("peli-ohi-teksti").textContent = viesti;
+
+  if (!pisteet) {
+    pisteetEl.classList.add("piilossa");
+    return;
+  }
+  pisteetEl.classList.remove("piilossa");
+
+  document.getElementById("peli-ohi-titteli").textContent =
+    pisteet.titteli.titteli + " (" + Math.floor(pisteet.yhteensa) + " pistettä) — " + pisteet.titteli.kuvaus;
+
+  const listaEl = document.getElementById("peli-ohi-pisteet-lista");
+  listaEl.innerHTML = "";
+  const rivit = [
+    "Kokonaissuosio: " + pisteet.suosio,
+    "Kuukaudet vallassa: " + pisteet.kuukaudet,
+    "Swiss-bonus: " + pisteet.swiss
+  ];
+  for (const rivi of rivit) {
+    const li = document.createElement("li");
+    li.textContent = rivi;
+    listaEl.appendChild(li);
+  }
 }

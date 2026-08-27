@@ -56,7 +56,7 @@ const paatoskortit = [
   { id: "D12", paatos: "Osta pakohelikopteri", toistuva: false,
     suosio: { armeija: -4, talonpojat: -1, maanomistajat: -3, salainenPoliisi: -2 },
     voima: {},
-    kertaluontoinen: -120000 },
+    kertaluontoinen: -120000, erikoinen: "HELIKOPTERI" },
   { id: "D13", paatos: "Siirrä rahaa Sveitsin tilille", toistuva: true,
     erikoinen: "SVEITSI" },
 

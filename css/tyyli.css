@@ -82,6 +82,20 @@ body {
   display: none;
 }
 
+#peli-ohi-pisteet.piilossa {
+  display: none;
+}
+
+#peli-ohi-titteli {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+#peli-ohi-pisteet-lista {
+  list-style: none;
+  padding: 0;
+}
+
 .kriisipaneeli {
   border-left: 4px solid #b22222;
   background: #2a2020;
@@ -103,7 +117,8 @@ body {
 
 #kriisi-uhka-napit button,
 #kriisi-vaatimus-napit button,
-#kriisi-rangaistus-napit button {
+#kriisi-rangaistus-napit button,
+#kriisi-puolustus-osio button {
   margin-right: 0.5rem;
 }
 

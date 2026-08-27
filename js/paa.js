@@ -14,10 +14,12 @@ function asetaSeuraavaKuukausiNappiTila() {
     pelitila.peliOhi || !!audienssiOdottaa || paatosOdottaa || !!nykyinenKriisi;
 }
 
-function merkitsePeliOhi(viesti) {
+function merkitsePeliOhi(viesti, pakeniHengissa) {
+  const pisteet = laskePisteet(pelitila, !!pakeniHengissa);
   pelitila.peliOhi = true;
   pelitila.peliOhiViesti = viesti;
-  piirraPeliOhi(viesti);
+  pelitila.peliOhiPisteet = pisteet;
+  piirraPeliOhi(viesti, pisteet);
   asetaSeuraavaKuukausiNappiTila();
 }
 
@@ -27,6 +29,8 @@ function tarkistaSotalaukaisijat(kortti) {
     pelitila.pikasotaOdottaa = true;
   } else if (kortti.erikoinen === "ESKALAATIO") {
     aloitaN1Kierre(pelitila);
+  } else if (kortti.erikoinen === "HELIKOPTERI") {
+    pelitila.helikopteriOstettu = true;
   }
 }
 
@@ -266,6 +270,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "puolustus") return;
     const valittu = document.getElementById("kriisi-puolustus-valinta").value;
     ratkaiseJaNaytaPuolustustulos(nykyinenKriisi, valittu);
+  });
+
+  document.getElementById("kriisi-pakene-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "puolustus") return;
+    const tulos = pakene(pelitila);
+    nykyinenKriisi = null;
+    piirraKriisi(null);
+    if (tulos.onnistui) {
+      merkitsePeliOhi("Pakenit onnistuneesti (" + tulos.reitti + ")! Selvisit hengissä.", true);
+    } else {
+      merkitsePeliOhi("Jäit kiinni paetessasi (" + tulos.reitti + ") — likvidaatio. Peli päättyi.", false);
+    }
   });
 
   document.getElementById("kriisi-rankaise-nappi").addEventListener("click", () => {
