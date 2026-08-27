@@ -2,11 +2,17 @@
 //
 // erikoinen-kentät joita ei voi ilmaista suosio/voima-deltana, käsitellään
 // js/moottori/uutiset.js:ssä:
-//   N1_SOTAUHKA        — toistuva, GDD 8. luvun N1-eskalaatiokierre (sota syttyykö/N3) EI VIELÄ
-//                         toteutettu, tulossa toteutusjärjestyksen kohdassa 7 (Sota).
+//   N1_SOTAUHKA        — toistuva. Perussuosiovaikutus sovelletaan tässä; GDD 8. luvun
+//                         N1-eskalaatiokierre (sota syttyykö/perääntyykö) on eri mekanismi,
+//                         käsitellään js/moottori/sota.js:n suoritaN1Kierros-funktiossa kun
+//                         P1/D16 on ensin käynnistänyt kierteen.
 //   N2_SISSIT_MAX       — sissien voima asetetaan suoraan 9:ään.
-//   N3_SOTA_TODO        — "Sota laukeaa": sodan ratkaisu (GDD 8. luku) EI VIELÄ toteutettu,
-//                         kortti kuluu mutta ei tee mitään ennen sotajärjestelmää.
+//   N3_YLLATYSHYOKKAYS  — "Leftoto hyökkää!": Sasu (elokuu 2026) vahvisti että tämä VOI laueta
+//                         myös suoraan tavallisella uutispakan nostolla ilman A1/P1/D16-reittiä
+//                         ("naapuri on arvaamaton") — harvinainen mutta mahdollinen yllätyssota.
+//                         sovellaUutinen ei tee tälle mitään; itse sodan laukaisu (suoritaPikasota,
+//                         ei N1-puskuria eikä velkaa, samat säännöt kuin A1) hoidetaan
+//                         js/paa.js:n kasitteleUutinen-funktiossa normaalin noston jälkeen.
 //   N4_ARMEIJA_PUOLITA  — "Armeijan voima romahtaa": armeijan voima puolitetaan (pyöristys alas),
 //                         mutta ei koskaan alle 1:n (Sasu, elokuu 2026: "iso voima iso vaikutus,
 //                         pieni voima pienempi vaikutus, ei kuitenkaan mene ikinä nollaan").
@@ -28,7 +34,7 @@ const uutiskortit = {
     { id: "N2", tapahtuma: "Kuubalaiset aseistivat sissit", toistuva: false,
       erikoinen: "N2_SISSIT_MAX" },
     { id: "N3", tapahtuma: "Leftoto hyökkää!", toistuva: false,
-      erikoinen: "N3_SOTA_TODO" },
+      erikoinen: "N3_YLLATYSHYOKKAYS" },
     { id: "N4", tapahtuma: "Armeijan asevarasto räjähti", toistuva: false,
       erikoinen: "N4_ARMEIJA_PUOLITA" },
     { id: "N5", tapahtuma: "Banaanien hinta romahtaa", toistuva: false,

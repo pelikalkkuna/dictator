@@ -40,6 +40,12 @@ function viestiPikasodasta(tulos) {
     : "Armeija hyökkää Leftotoon — Ritimba HÄVIÄÄ pikasodan. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
 }
 
+function viestiYllatyshyokkayksesta(tulos) {
+  return tulos.voitto
+    ? "Leftoto hyökkää yllättäen ilman varoitusta! Ritimba torjuu hyökkäyksen. (" + tulos.ritimba + " vs " + tulos.leftoto + ")"
+    : "Leftoto hyökkää yllättäen ilman varoitusta! Ritimba HÄVIÄÄ. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
+}
+
 function viestiN1Tuloksesta(tulos) {
   if (tulos.tyyppi === "sota") {
     return tulos.voitto
@@ -66,7 +72,16 @@ function kasitteleUutinen() {
     kortti = { id: "N1", tapahtuma: viestiN1Tuloksesta(n1Tulos) };
   } else {
     kortti = nostaUutinen(pelitila, uutiskortit);
-    if (kortti) sovellaUutinen(pelitila, kortti);
+    if (kortti) {
+      sovellaUutinen(pelitila, kortti);
+      // GDD:ssä N3 ei koskaan pitäisi laueta normaalilla nostolla A1/N1-eskalaation
+      // ulkopuolella, mutta Sasu vahvisti (elokuu 2026) että se on tarkoituksella
+      // mahdollinen - harvinainen yllätyssota ilman N1-puskuria (samat säännöt kuin A1).
+      if (kortti.erikoinen === "N3_YLLATYSHYOKKAYS") {
+        sotaTulos = suoritaPikasota(pelitila);
+        kortti = { id: "N3", tapahtuma: viestiYllatyshyokkayksesta(sotaTulos) };
+      }
+    }
   }
 
   piirraKaikki();

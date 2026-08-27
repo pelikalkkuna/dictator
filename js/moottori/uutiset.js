@@ -68,8 +68,10 @@ function sovellaUutinen(pelitila, kortti) {
     case "N2_SISSIT_MAX":
       pelitila.ryhmat.sissit.voima = 9;
       return;
-    case "N3_SOTA_TODO":
-      // Odottaa sotajärjestelmää - ei vaikutusta vielä.
+    case "N3_YLLATYSHYOKKAYS":
+      // Ei suosio/voima/talousvaikutusta itsellään - itse sodan laukaisu (suoritaPikasota)
+      // hoidetaan js/paa.js:ssä, koska se vaatii pelitilan lisäksi muuta orkestrointia
+      // (viestit, peliOhi-tarkistus) eikä sovi tämän puhtaan sovellusfunktion vastuulle.
       return;
     case "N4_ARMEIJA_PUOLITA": {
       const nykyinen = pelitila.ryhmat.armeija.voima;
