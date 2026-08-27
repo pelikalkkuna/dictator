@@ -53,17 +53,28 @@ function onkoPakkoEi(pelitila, kortti) {
   return pelitila.kassakriisi && typeof kortti.kertaluontoinen === "number" && kortti.kertaluontoinen < 0;
 }
 
-function sovellaMittarimuutokset(pelitila, muutokset, kentta) {
+// GDD:n epäselvät "X/Y"-välimerkinnät (esim. A3:n sissit "−1/−2") tulkitaan tasaisesti
+// arvotuksi kokonaisluvuksi välin päistä - kortin data merkitsee tämän { min, max }-oliona.
+function satunnaisKokonaisluku(min, max, heittoFn) {
+  const heitto = heittoFn || Math.random;
+  return min + Math.floor(heitto() * (max - min + 1));
+}
+
+function sovellaMittarimuutokset(pelitila, muutokset, kentta, heittoFn) {
   if (!muutokset) return;
   for (const ryhmaAvain in muutokset) {
+    const maare = muutokset[ryhmaAvain];
+    const muutos = (maare && typeof maare === "object")
+      ? satunnaisKokonaisluku(maare.min, maare.max, heittoFn)
+      : maare;
     const ryhma = pelitila.ryhmat[ryhmaAvain];
-    ryhma[kentta] = rajaaMittari(ryhma[kentta] + muutokset[ryhmaAvain]);
+    ryhma[kentta] = rajaaMittari(ryhma[kentta] + muutos);
   }
 }
 
-function hyvaksyAudienssi(pelitila, kortti) {
-  sovellaMittarimuutokset(pelitila, kortti.suosio, "suosio");
-  sovellaMittarimuutokset(pelitila, kortti.voima, "voima");
+function hyvaksyAudienssi(pelitila, kortti, heittoFn) {
+  sovellaMittarimuutokset(pelitila, kortti.suosio, "suosio", heittoFn);
+  sovellaMittarimuutokset(pelitila, kortti.voima, "voima", heittoFn);
   if (typeof kortti.kertaluontoinen === "number") {
     pelitila.kassa += kortti.kertaluontoinen;
   }

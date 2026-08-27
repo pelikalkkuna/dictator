@@ -2,8 +2,11 @@
 // kuukausikulutMuutos = pysyvä muutos kuukausikuluihin (positiivinen = kulut nousevat).
 // erikoinen: PIKASOTA/ESKALAATIO -merkinnät odottavat sotajärjestelmää (GDD 8. luku).
 //
-// HUOM A3: GDD merkitsee sissien voimavaikutukseksi "−1/−2" — epäselvä väli.
-// Tässä käytetty −1 (lievempi tulkinta) kunnes Sasu vahvistaa. Ks. CLAUDE.md muistiinpanot.
+// HUOM A3: GDD merkitsee sissien voimavaikutukseksi "−1/−2" — alkuperäistä C64-peliä ei ollut
+// saatavilla lähdeaineistona, vain emulaattoripelaamiseen perustuva tulkinta, joten tarkkaa
+// arvoa ei saatu selville. Sasun kanssa päätetty (elokuu 2026): arvotaan −1 tai −2 tasaisesti
+// jokaisella käyttökerralla (ks. { min, max } -muoto ja js/moottori/audienssit.js:n
+// sovellaMittarimuutokset-funktio).
 
 const audienssikortit = {
   armeija: [
@@ -17,7 +20,7 @@ const audienssikortit = {
       kertaluontoinen: -100000 },
     { id: "A3", vaatimus: "Osta lisää aseita ja ammuksia",
       suosio: { armeija: 4, talonpojat: -1, maanomistajat: -1, leftoto: -1, salainenPoliisi: -1 },
-      voima: { armeija: 3, sissit: -1, leftoto: -1 },
+      voima: { armeija: 3, sissit: { min: -2, max: -1 }, leftoto: -1 },
       kertaluontoinen: -120000 },
     { id: "A4", vaatimus: "Korota sotilaiden palkkoja",
       suosio: { armeija: 3, talonpojat: -1, maanomistajat: -1 },

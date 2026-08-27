@@ -55,6 +55,19 @@ test("A1 hyväksyttynä nostaa armeijan suosiota ja voimaa GDD:n mukaisesti", ()
   assert.equal(tila.kassa, 1000000 - 80000);
 });
 
+test("A3 arpoo sissien voimavaikutuksen väliltä -1..-2 (GDD:n epäselvä väli)", () => {
+  const a3 = audienssikortit.armeija.find(k => k.id === "A3");
+  assert.deepEqual(a3.voima.sissit, { min: -2, max: -1 });
+
+  const tilaPieni = uusiTila();
+  hyvaksyAudienssi(tilaPieni, a3, () => 0); // pienin arvo välistä -> -2
+  assert.equal(tilaPieni.ryhmat.sissit.voima, 4); // 6 - 2
+
+  const tilaSuuri = uusiTila();
+  hyvaksyAudienssi(tilaSuuri, a3, () => 0.999); // suurin arvo välistä -> -1
+  assert.equal(tilaSuuri.ryhmat.sissit.voima, 5); // 6 - 1
+});
+
 test("hylätty audienssi antaa esittäjälle saman suuruisen suosiomiinuksen", () => {
   const tila = uusiTila();
   const a1 = audienssikortit.armeija.find(k => k.id === "A1"); // armeija suosio +3 jos hyväksytty
