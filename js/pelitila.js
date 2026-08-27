@@ -34,6 +34,8 @@ const pelitila = {
   n1Kierros: 0,
   sotaVelkaKuukausiaJaljella: 0,
   vallankumousvoimaPalautusJaljella: 0,
+  vallankumousvoimaPalautusKesto: 0,
+  vallankumousvoimaAlkuperainenPiikki: 0,
 
   // GDD 3.5/11: pako.
   helikopteriOstettu: false,

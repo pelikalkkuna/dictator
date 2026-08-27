@@ -17,6 +17,8 @@ function uusiTila(yliajot) {
     kuukausikulut: 45000,
     vallankumousvoima: 10,
     vallankumousvoimaPalautusJaljella: 0,
+    vallankumousvoimaPalautusKesto: 0,
+    vallankumousvoimaAlkuperainenPiikki: 0,
     sotaVelkaKuukausiaJaljella: 0,
     n1KierreKaynnissa: false,
     n1Kierros: 0,
@@ -71,6 +73,8 @@ test("suoritaPikasota: voitolla Leftoto puolittuu ja vallankumousvoima piikkaa, 
   assert.equal(tila.ryhmat.leftoto.voima, 3); // floor(6/2)
   assert.equal(tila.vallankumousvoima, 18); // Ritimban voima
   assert.equal(tila.vallankumousvoimaPalautusJaljella, 3);
+  assert.equal(tila.vallankumousvoimaPalautusKesto, 3);
+  assert.equal(tila.vallankumousvoimaAlkuperainenPiikki, 8); // 18 - 10
   assert.equal(tila.sotaVelkaKuukausiaJaljella, 0); // A1-pikasodassa ei velkaa
 });
 
@@ -155,10 +159,23 @@ test("kasitteleSotaVelka ei tee mitään kun velkaa ei ole", () => {
   assert.equal(tila.ryhmat.armeija.suosio, 7);
 });
 
-test("kasitteleVallankumousvoimanPalautuminen palaa tasan 10:een kolmessa kuukaudessa", () => {
-  const tila = uusiTila({ vallankumousvoima: 19, vallankumousvoimaPalautusJaljella: 3 });
+test("kasitteleVallankumousvoimanPalautuminen: nopeampi alussa, hitaampi lopussa, tasan 10 kolmessa kk:ssa", () => {
+  const tila = uusiTila({
+    vallankumousvoima: 19,
+    vallankumousvoimaPalautusJaljella: 3,
+    vallankumousvoimaPalautusKesto: 3,
+    vallankumousvoimaAlkuperainenPiikki: 9 // 19 - 10
+  });
   kasitteleVallankumousvoimanPalautuminen(tila);
+  assert.equal(tila.vallankumousvoima, 14.5); // 19 - 9*(3/6)
+  const ensimmainenAskel = 19 - tila.vallankumousvoima;
+
   kasitteleVallankumousvoimanPalautuminen(tila);
+  assert.equal(tila.vallankumousvoima, 11.5); // 14.5 - 9*(2/6)
+  const toinenAskel = 14.5 - tila.vallankumousvoima;
+
+  assert.ok(ensimmainenAskel > toinenAskel); // nopeampi alussa kuin toisella kuukaudella
+
   kasitteleVallankumousvoimanPalautuminen(tila);
   assert.equal(tila.vallankumousvoima, 10);
   assert.equal(tila.vallankumousvoimaPalautusJaljella, 0);

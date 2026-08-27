@@ -1,8 +1,10 @@
 // GDD 8. luku: sota.
 //
-// HUOM (assumptio, ei GDD:ssä täsmennetty): "REV STR piikkaa... ja palautuu 3 kk:ssa" (8.4)
-// toteutettu tasaisena lineaarisena paluuna kolmen kuukauden yli. GDD ei anna tarkkaa käyrää.
-// Ks. CLAUDE.md muistiinpanot.
+// HUOM (Sasu, elokuu 2026): "REV STR piikkaa... ja palautuu 3 kk:ssa" (8.4) - paluu on
+// nopeampi alussa ja hidastuu ("olis realistisempi näin"), ei tasainen lineaarinen askellus.
+// Toteutettu kolmiolukupainotuksella: kuukausi 1 poistaa 3/6 alkuperäisestä piikistä,
+// kuukausi 2 poistaa 2/6, kuukausi 3 loput 1/6 (pyöristysvirheettä varmuuden vuoksi
+// asetetaan viimeisellä kuukaudella suoraan tasan 10:een). Ks. kasitteleVallankumousvoimanPalautuminen.
 
 // HUOM: "uutiskortit" on data/uutiset.js:ssä const-muuttuja, joten sitä ei voi tuoda
 // samalla nimellä var-määrittelyllä (SyntaxError selaimessa, jossa se on jo globaali).
@@ -36,11 +38,16 @@ function laskeLeftotonVoima(pelitila) {
   return pelitila.ryhmat.leftoto.voima + pelitila.ryhmat.sissit.voima;
 }
 
+const VALLANKUMOUSVOIMA_PALAUTUS_KESTO = 3;
+const VALLANKUMOUSVOIMA_BASELINE = 10;
+
 // GDD 8.4: sodan jälkitila voitetulle sodalle (molemmat reitit).
 function kasitteleSodanJalkitila(pelitila, ritimbanVoima) {
   pelitila.ryhmat.leftoto.voima = Math.floor(pelitila.ryhmat.leftoto.voima / 2);
   pelitila.vallankumousvoima = ritimbanVoima;
-  pelitila.vallankumousvoimaPalautusJaljella = 3;
+  pelitila.vallankumousvoimaPalautusJaljella = VALLANKUMOUSVOIMA_PALAUTUS_KESTO;
+  pelitila.vallankumousvoimaPalautusKesto = VALLANKUMOUSVOIMA_PALAUTUS_KESTO;
+  pelitila.vallankumousvoimaAlkuperainenPiikki = Math.max(0, ritimbanVoima - VALLANKUMOUSVOIMA_BASELINE);
 }
 
 // GDD 8.4: velkavaihe - VAIN reitti 2:n sodalle, ei A1-pikasodalle. Kasautuu jos päällekkäin.
@@ -117,13 +124,22 @@ function kasitteleSotaVelka(pelitila) {
 }
 
 // GDD 8.4: REV STR:n (vallankumousvoima) paluu piikin jälkeen - kutsutaan kuukauden alussa.
+// Kolmiolukupainotus: kuukausi jolla on eniten kuukausia jäljellä poistaa suurimman osuuden
+// ALKUPERÄISESTÄ piikistä (nopea alku), viimeinen kuukausi asettaa arvon tasan perustasoon
+// asti pyöristysvirheistä riippumatta.
 function kasitteleVallankumousvoimanPalautuminen(pelitila) {
   if (!pelitila.vallankumousvoimaPalautusJaljella || pelitila.vallankumousvoimaPalautusJaljella <= 0) return;
+
+  const kesto = pelitila.vallankumousvoimaPalautusKesto || pelitila.vallankumousvoimaPalautusJaljella;
+  const jaljellaEnnenTataKuukautta = pelitila.vallankumousvoimaPalautusJaljella;
+  const painojenSumma = kesto * (kesto + 1) / 2;
+  const askel = pelitila.vallankumousvoimaAlkuperainenPiikki * (jaljellaEnnenTataKuukautta / painojenSumma);
+
   pelitila.vallankumousvoimaPalautusJaljella -= 1;
+
   if (pelitila.vallankumousvoimaPalautusJaljella <= 0) {
-    pelitila.vallankumousvoima = 10;
+    pelitila.vallankumousvoima = VALLANKUMOUSVOIMA_BASELINE;
   } else {
-    const askel = (pelitila.vallankumousvoima - 10) / (pelitila.vallankumousvoimaPalautusJaljella + 1);
     pelitila.vallankumousvoima -= askel;
   }
 }
