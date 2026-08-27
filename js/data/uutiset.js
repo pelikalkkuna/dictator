@@ -10,8 +10,9 @@
 //   N4_ARMEIJA_PUOLITA  — "Armeijan voima romahtaa": armeijan voima puolitetaan (pyöristys alas),
 //                         mutta ei koskaan alle 1:n (Sasu, elokuu 2026: "iso voima iso vaikutus,
 //                         pieni voima pienempi vaikutus, ei kuitenkaan mene ikinä nollaan").
-//   N5_EI_MAARITELTY    — "Kassatulot laskevat" / "−tuloja" ilman lukua GDD:ssä. EI TOTEUTETTU,
-//                         odottaa Sasun vahvistusta.
+//   N5_BANAANIT         — "Banaanien hinta romahtaa": maanomistajien suosio puolitetaan
+//                         (pyöristys alas) ja kuukausikulut nousevat 5000:lla pysyvästi,
+//                         simuloiden menetettyä verotuloa (Sasu, elokuu 2026).
 //   N6_POLIISI_NOLLAAN  — salaisen poliisin suosio JA voima asetetaan 0:aan.
 //   N7_LEFTOTO_PUOLITA  — Leftoton voima puolitetaan (pyöristys alas).
 //
@@ -30,7 +31,7 @@ const uutiskortit = {
     { id: "N4", tapahtuma: "Armeijan asevarasto räjähti", toistuva: false,
       erikoinen: "N4_ARMEIJA_PUOLITA" },
     { id: "N5", tapahtuma: "Banaanien hinta romahtaa", toistuva: false,
-      erikoinen: "N5_EI_MAARITELTY" },
+      erikoinen: "N5_BANAANIT" },
     { id: "N6", tapahtuma: "Presidentti hukkasi poliisin kansiot", toistuva: false,
       erikoinen: "N6_POLIISI_NOLLAAN" },
     { id: "N7", tapahtuma: "Maanjäristys Leftotossa", toistuva: false,

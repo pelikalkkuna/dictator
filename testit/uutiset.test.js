@@ -68,14 +68,20 @@ test("N7 puolittaa Leftoton voiman pyöristäen alas", () => {
   assert.equal(tila.ryhmat.leftoto.voima, 3); // floor(7/2)
 });
 
-test("N3/N5 eivät vielä tee mitään (odottavat sotaa / Sasun vahvistusta)", () => {
+test("N3 ei vielä tee mitään (odottaa sotajärjestelmää)", () => {
   const tila = uusiTila();
   const alkuperainenKassa = tila.kassa;
-  for (const id of ["N3", "N5"]) {
-    sovellaUutinen(tila, etsiUutinen(uutiskortit, id));
-  }
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N3"));
   assert.equal(tila.kassa, alkuperainenKassa);
   assert.equal(tila.ryhmat.armeija.voima, 6);
+});
+
+test("N5 puolittaa maanomistajien suosion ja nostaa kuukausikulut +5000", () => {
+  const tila = uusiTila();
+  tila.ryhmat.maanomistajat.suosio = 7;
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N5"));
+  assert.equal(tila.ryhmat.maanomistajat.suosio, 3); // floor(7/2)
+  assert.equal(tila.kuukausikulut, 45000 + 5000);
 });
 
 test("N4 puolittaa armeijan voiman pyöristäen alas", () => {
