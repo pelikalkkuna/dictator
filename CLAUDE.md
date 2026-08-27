@@ -2,12 +2,13 @@
 
 ## Nykyinen tila
 
-Päivitetty: huhtikuu 2026
+Päivitetty: elokuu 2026
 
-- **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii (`gh` CLI + auth), push/pull toimii
-- **GDD:** `GDD.md` luotu suoraan `Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
-- **Pelikoodi:** ei yhtään koodiriviä vielä — puhdas pöytä
-- **Seuraava askel:** pelin rakentaminen alkaa, ensimmäisenä minimaalinen HTML-runko ja pelitila-objekti
+- **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii, push/pull toimii
+- **GDD:** `docs/GDD.md` luotu suoraan `docs/Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
+- **Materiaali:** `materiaali/`-kansiossa mainoskuva ja voittomarssi (myöhempää web-mainontaa varten)
+- **Pelikoodi:** kohta 1 valmis — minimaalinen runko toimii selaimessa (`index.html`, `js/pelitila.js`, `js/nakyma/piirto.js`, `js/paa.js`, `css/tyyli.css`)
+- **Seuraava askel:** kohta 2 toteutusjärjestyksestä — kassajärjestelmä (kassaraportti, kuukausikulut, kassan kuivuminen)
 
 ## Projektin kuvaus
 
