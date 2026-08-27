@@ -160,24 +160,47 @@ test("hyvaksyVaatimus soveltaa kortin suosio/voima/talous-vaikutukset", () => {
   assert.equal(tila.kuukausikulut, 50000);
 });
 
-test("ratkaisePuolustus: pelaaja voittaa kun voima riittää", () => {
+test("ratkaisePuolustus: voittotodennäköisyys on pelaajan osuus yhteisvoimasta", () => {
   const tila = uusiTila();
   tila.henkivartijoidenVoima = 4;
   tila.ryhmat.maanomistajat.voima = 6; // valittu puolustaja
   const kriisi = { kaynnistaja: "armeija", liittolainen: "talonpojat", sissitMukana: false };
   tila.ryhmat.armeija.voima = 5;
-  tila.ryhmat.talonpojat.voima = 4; // vihollinen 9, pelaaja 4+6=10
-  const tulos = ratkaisePuolustus(tila, kriisi, "maanomistajat");
-  assert.equal(tulos.voitto, true);
+  tila.ryhmat.talonpojat.voima = 4; // vihollinen 9, pelaaja 4+6=10, yhteensä 19
+  const tulos = ratkaisePuolustus(tila, kriisi, "maanomistajat", () => 0.5);
   assert.equal(tulos.pelaajanVoima, 10);
   assert.equal(tulos.vihollisenVoima, 9);
+  assert.equal(tulos.voittotodennakoisyys, 10 / 19);
+  assert.equal(tulos.voitto, 0.5 < 10 / 19); // heitto 0.5 < ~0.526 -> voitto
+});
+
+test("ratkaisePuolustus: heitto alle voittotodennäköisyyden -> voitto, muuten tappio", () => {
+  const tila = uusiTila();
+  tila.henkivartijoidenVoima = 10;
+  tila.ryhmat.maanomistajat.voima = 0;
+  const kriisi = { kaynnistaja: "armeija", liittolainen: "talonpojat", sissitMukana: false };
+  tila.ryhmat.armeija.voima = 5;
+  tila.ryhmat.talonpojat.voima = 5; // pelaaja 10, vihollinen 10 -> 50/50
+  assert.equal(ratkaisePuolustus(tila, kriisi, "maanomistajat", () => 0.49).voitto, true);
+  assert.equal(ratkaisePuolustus(tila, kriisi, "maanomistajat", () => 0.51).voitto, false);
+});
+
+test("ratkaisePuolustus: ylivoimainenkin puolustus voi hävitä (ei koskaan 100% varma)", () => {
+  const tila = uusiTila();
+  tila.henkivartijoidenVoima = 9;
+  tila.ryhmat.maanomistajat.voima = 9;
+  const kriisi = { kaynnistaja: "armeija", liittolainen: "talonpojat", sissitMukana: false };
+  tila.ryhmat.armeija.voima = 1;
+  tila.ryhmat.talonpojat.voima = 0; // pelaaja 18, vihollinen 1 -> todennäköisyys 18/19, mutta ei 1.0
+  const tulos = ratkaisePuolustus(tila, kriisi, "maanomistajat", () => 0.999);
+  assert.equal(tulos.voitto, false); // 0.999 >= 18/19 (~0.947)
 });
 
 test("ratkaisePuolustus: pakkotaistelu pelkillä henkivartijoilla kun ketään ei valita", () => {
   const tila = uusiTila();
   tila.henkivartijoidenVoima = 4;
   const kriisi = { kaynnistaja: "armeija", liittolainen: "talonpojat", sissitMukana: false };
-  const tulos = ratkaisePuolustus(tila, kriisi, null);
+  const tulos = ratkaisePuolustus(tila, kriisi, null, () => 0.5);
   assert.equal(tulos.pelaajanVoima, 4);
 });
 

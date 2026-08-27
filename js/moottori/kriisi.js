@@ -7,10 +7,8 @@
 // alussa. Käytetään sen sijaan EROA: tyytymattomyys = voima - suosio, kynnys 3 (aloitusarvo
 // 6-7=-1, kaukana kynnyksestä). Kynnysarvo 3 on arvaus, ei simuloitu - voi vaatia säätöä.
 //
-// HUOM: GDD 9.6 mainitsee "Selviytyminen kaappauksesta/kapinasta: ~25% (D4, tulos 4)".
-// Tulkittu tilastolliseksi kuvaukseksi 9.5:n deterministisen voimavertailun lopputulemasta
-// (samaan tapaan kuin GDD 8.2:n "Sota syttyy ~90%"), EI erilliseksi D4-nopanheitoksi
-// voimavertailun päälle. Jos tämä on väärin, taistelumekaniikka pitää tarkistaa Sasulta.
+// HUOM (Sasu, elokuu 2026): GDD 9.6:n "~25% (D4, tulos 4)" vahvistettu tarkoittavan oikeaa
+// satunnaisuutta taistelussa itsessään, ei pelkkää tilastokuvausta. Ks. ratkaisePuolustus.
 
 if (typeof module !== "undefined") {
   var { rajaaMittari } = require("./mittarit.js");
@@ -121,13 +119,19 @@ function hyvaksyVaatimus(pelitila, kortti) {
   }
 }
 
-// GDD 9.5: puolustusvalinnan taistelu.
-function ratkaisePuolustus(pelitila, kriisi, valittuRyhmaAvain) {
+// GDD 9.5/9.6: puolustusvalinnan taistelu. Sasu (elokuu 2026): "kaikki on sattumaa silloin
+// kun aseet puhuu" - taistelu ei ole deterministinen voimavertailu vaan voimien SUHTEESTA
+// johdettu todennäköisyys (heikommallakin on aina mahdollisuus, vahvempikaan ei ole varma).
+// GDD 9.6:n "~25% selviytyminen" on tämän kaavan tyypillinen keskiarvo, ei erillinen sääntö.
+function ratkaisePuolustus(pelitila, kriisi, valittuRyhmaAvain, satunnaisFn) {
+  const heitto = satunnaisFn || Math.random;
   const pelaajanVoima = pelitila.henkivartijoidenVoima
     + (valittuRyhmaAvain ? pelitila.ryhmat[valittuRyhmaAvain].voima : 0);
   const vihollisenVoima = pelitila.ryhmat[kriisi.kaynnistaja].voima + pelitila.ryhmat[kriisi.liittolainen].voima
     + (kriisi.sissitMukana ? pelitila.ryhmat.sissit.voima : 0);
-  return { voitto: pelaajanVoima >= vihollisenVoima, pelaajanVoima, vihollisenVoima };
+  const yhteensa = pelaajanVoima + vihollisenVoima;
+  const voittotodennakoisyys = yhteensa === 0 ? 0.5 : pelaajanVoima / yhteensa;
+  return { voitto: heitto() < voittotodennakoisyys, pelaajanVoima, vihollisenVoima, voittotodennakoisyys };
 }
 
 function kriisinRyhmat(kriisi) {
