@@ -80,3 +80,14 @@ function piirraUutinen(kortti) {
   uutinenEl.classList.remove("piilossa");
   document.getElementById("uutinen-teksti").textContent = kortti.id + ": " + kortti.tapahtuma;
 }
+
+function piirraPeliOhi(viesti) {
+  const peliOhiEl = document.getElementById("peli-ohi");
+
+  if (!viesti) {
+    peliOhiEl.classList.add("piilossa");
+    return;
+  }
+  peliOhiEl.classList.remove("piilossa");
+  document.getElementById("peli-ohi-teksti").textContent = viesti;
+}

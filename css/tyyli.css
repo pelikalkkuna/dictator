@@ -70,6 +70,18 @@ body {
   display: none;
 }
 
+.peli-ohi {
+  border-left: 4px solid #b22222;
+  background: #2a2020;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.peli-ohi.piilossa {
+  display: none;
+}
+
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;

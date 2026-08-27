@@ -26,7 +26,17 @@ const pelitila = {
   kaytetytPaatokset: [],
 
   // Täytetään käynnistyksessä luoUutispakka(uutiskortit):llä.
-  uutispakka: []
+  uutispakka: [],
+
+  // GDD 8: sota.
+  pikasotaOdottaa: false,
+  n1KierreKaynnissa: false,
+  n1Kierros: 0,
+  sotaVelkaKuukausiaJaljella: 0,
+  vallankumousvoimaPalautusJaljella: 0,
+
+  peliOhi: false,
+  peliOhiViesti: ""
 };
 
 if (typeof module !== "undefined") {
