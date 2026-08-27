@@ -7,9 +7,9 @@ Päivitetty: elokuu 2026
 - **Infrastruktuuri:** Git-repo pystytetty, GitHub-yhteys toimii, push/pull toimii
 - **GDD:** `docs/GDD.md` luotu suoraan `docs/Dictator_GDD_V11.docx`:stä — toimii projektin ykköslähteenä
 - **Materiaali:** `materiaali/`-kansiossa mainoskuva ja voittomarssi (myöhempää web-mainontaa varten)
-- **Pelikoodi:** kohdat 1–3 valmiit — runko, kassajärjestelmä (kassaraportti, kuukausikulut 45k/kk, kassakriisi-tila) ja ryhmät/mittarit (8 ryhmää GDD 2.2:n aloitusarvoin, mittarien 0–9 rajaus) toimivat selaimessa. "Seuraava kuukausi" -nappi testauksen ajaksi, korvataan varsinaisella kuukausikierroksella myöhemmässä vaiheessa.
-- **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 7 testiä kattaa kassaraportin laskennan ja mittarien rajauksen, kaikki vihreää
-- **Seuraava askel:** kohta 4 toteutusjärjestyksestä — audienssijärjestelmä (D3, kortit, hyväksy/hylkää)
+- **Pelikoodi:** kohdat 1–4 valmiit — runko, kassajärjestelmä (kassaraportti, kuukausikulut 45k/kk, kassakriisi-tila), ryhmät/mittarit (8 ryhmää GDD 2.2:n aloitusarvoin, mittarien 0–9 rajaus) ja audienssijärjestelmä (kaikki 42 korttia GDD 5.1–5.3:sta, D3-valinta pakkalogiikkoineen, hyväksy/hylkää, pakko-EI kassakriisissä) toimivat selaimessa. "Seuraava kuukausi" -nappi testauksen ajaksi, korvataan varsinaisella kuukausikierroksella myöhemmässä vaiheessa.
+- **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 18 testiä kattaa kassaraportin laskennan, mittarien rajauksen ja audienssimekaniikan (kortin valinta, hyväksyntä/hylkäys, pakko-EI, korttien poisto pakasta), kaikki vihreää
+- **Seuraava askel:** kohta 5 toteutusjärjestyksestä — presidentin päätökset (D1–D19)
 
 ## Projektin kuvaus
 
@@ -159,4 +159,6 @@ Sasu testaa itse pelattavuutta selaimessa jokaisen valmiin osan jälkeen.
 
 (Tähän osioon Claude kirjaa asioita joita sessioiden välillä on hyvä muistaa — esim. keskeneräiset ongelmat, tehdyt arkkitehtuurivalinnat joita GDD ei määrää, todetut bugit joita ei ole vielä korjattu.)
 
-- (tyhjä — täytetään matkan varrella)
+- **KYSYTTÄVÄ SASULTA:** GDD:n audienssikortti A3 ("Osta lisää aseita ja ammuksia") merkitsee sissien voimavaikutukseksi "−1/−2" — epäselvä väli, ei tiedetä tarkoittaako vaihtoehtoa, satunnaisuutta vai jotain muuta. Koodissa (`js/data/audienssit.js`) käytetty toistaiseksi −1:tä. Pitää vahvistaa Sasulta.
+- **Arkkitehtuurivalinta — talousmerkintöjen etumerkki:** GDD:n "X/kk"-merkinnät (esim. audienssien Talous-sarake) tulkitaan suoraan kuukausikulut-muuttujan muutokseksi ilman etumerkin kääntöä — sama konventio kuin GDD:n omassa D9/D10-esimerkissä (osio 13): "kulut −8k/kk" ja "kulut +6k/kk" ovat suoria lukuja. Eli "+5k/kk" audienssikortilla TARKOITTAA kulut nousevat 5000 (ei säästöä), vaikka narratiivisesti joskus tuntuisi päinvastaiselta (esim. M9 banaaniviljelmät). Ei tulkittu kortti kerrallaan uudelleen.
+- **Väliaikainen ratkaisu:** "Seuraava kuukausi" -nappi ajaa kassaraportin ja audienssin yksinkertaistetussa järjestyksessä (ei GDD 4. luvun täyttä 8-vaiheista kuukausikierrosta). Korvataan `js/moottori/kuukausikierros.js`:llä kun presidentin päätökset ja uutisvaihe on rakennettu.

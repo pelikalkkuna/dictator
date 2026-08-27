@@ -35,7 +35,27 @@ body {
   border-bottom: 1px solid #333;
 }
 
+.audienssi {
+  border-left: 4px solid #d4af37;
+  background: #2a2510;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.audienssi.piilossa {
+  display: none;
+}
+
+#audienssi-napit button {
+  margin-right: 0.5rem;
+}
+
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
+}
+
+#seuraava-kuukausi-nappi:disabled {
+  opacity: 0.4;
 }

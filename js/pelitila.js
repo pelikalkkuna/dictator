@@ -18,7 +18,10 @@ const pelitila = {
     salainenPoliisi: { nimi: "Salainen poliisi", suosio: 7, voima: 6 },
     venaja: { nimi: "Venäjä", suosio: 7, voima: 0 },
     usa: { nimi: "Yhdysvallat", suosio: 7, voima: 0 }
-  }
+  },
+
+  // Täytetään käynnistyksessä luoAudienssipakat(audienssikortit):llä.
+  audienssipakat: { armeija: [], talonpojat: [], maanomistajat: [] }
 };
 
 if (typeof module !== "undefined") {
