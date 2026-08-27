@@ -1,5 +1,6 @@
 let nykyinenAudienssi = null;
 let paatosOdottaa = false;
+let nykyinenKriisi = null;
 
 function piirraKaikki() {
   piirraKuukausi();
@@ -10,7 +11,7 @@ function piirraKaikki() {
 function asetaSeuraavaKuukausiNappiTila() {
   const audienssiOdottaa = nykyinenAudienssi && !nykyinenAudienssi.pakkoEi;
   document.getElementById("seuraava-kuukausi-nappi").disabled =
-    pelitila.peliOhi || !!audienssiOdottaa || paatosOdottaa;
+    pelitila.peliOhi || !!audienssiOdottaa || paatosOdottaa || !!nykyinenKriisi;
 }
 
 function merkitsePeliOhi(viesti) {
@@ -69,6 +70,54 @@ function kasitteleUutinen() {
 
   if (sotaTulos && !sotaTulos.voitto) {
     merkitsePeliOhi("Sota hävitty Leftotoa vastaan — likvidaatio. Peli päättyi.");
+    return;
+  }
+
+  tarkistaJaAloitaKriisi();
+}
+
+// GDD 9: voi laukaista missä vaiheessa tahansa - tarkistetaan käytännössä kerran per kuukausi,
+// uutisvaiheen jälkeen (viimeinen tilaa muuttava vaihe yksinkertaistetussa kuukausikierrossa).
+function tarkistaJaAloitaKriisi() {
+  const kriisi = tarkistaKriisi(pelitila);
+  if (!kriisi) {
+    nykyinenKriisi = null;
+    piirraKriisi(null);
+    asetaSeuraavaKuukausiNappiTila();
+    return;
+  }
+
+  nykyinenKriisi = kriisi;
+  if (kriisi.tyyppi === "VALLANKUMOUS") {
+    siirryPuolustusvaiheeseen(nykyinenKriisi);
+  } else {
+    nykyinenKriisi.vaihe = "uhka";
+    piirraKriisi(nykyinenKriisi);
+    asetaSeuraavaKuukausiNappiTila();
+  }
+}
+
+function siirryPuolustusvaiheeseen(kriisi) {
+  kriisi.ehdokkaat = puolustusehdokkaat(pelitila, [kriisi.kaynnistaja, kriisi.liittolainen]);
+  if (kriisi.ehdokkaat.length === 0) {
+    ratkaiseJaNaytaPuolustustulos(kriisi, null);
+    return;
+  }
+  kriisi.vaihe = "puolustus";
+  piirraKriisi(kriisi);
+  asetaSeuraavaKuukausiNappiTila();
+}
+
+function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
+  const tulos = ratkaisePuolustus(pelitila, kriisi, valittuRyhmaAvain);
+  if (tulos.voitto) {
+    kriisi.vaihe = "rangaistus";
+    piirraKriisi(kriisi);
+    asetaSeuraavaKuukausiNappiTila();
+  } else {
+    nykyinenKriisi = null;
+    piirraKriisi(null);
+    merkitsePeliOhi(kriisi.tyyppi.charAt(0) + kriisi.tyyppi.slice(1).toLowerCase() + " voitti taistelun palatsista — likvidaatio. Peli päättyi.");
   }
 }
 
@@ -141,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
   piirraAudienssi(null);
   piirraPaatosvalinta(false);
   piirraUutinen(null);
+  piirraKriisi(null);
   piirraPeliOhi(null);
 
   document.getElementById("seuraava-kuukausi-nappi").addEventListener("click", () => {
@@ -158,4 +208,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("paatos-toteuta-nappi").addEventListener("click", toteutaValittuPaatos);
   document.getElementById("paatos-ohita-nappi").addEventListener("click", suljePaatosvalinta);
+
+  document.getElementById("kriisi-neuvottele-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "uhka") return;
+    if (neuvotteleOnnistuu()) {
+      nykyinenKriisi.vaatimuskortti = valitseVaatimuskortti(nykyinenKriisi.tyyppi);
+      nykyinenKriisi.vaihe = "vaatimus";
+      piirraKriisi(nykyinenKriisi);
+    } else {
+      siirryPuolustusvaiheeseen(nykyinenKriisi);
+    }
+  });
+
+  document.getElementById("kriisi-taistele-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "uhka") return;
+    siirryPuolustusvaiheeseen(nykyinenKriisi);
+  });
+
+  document.getElementById("kriisi-hyvaksy-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "vaatimus") return;
+    hyvaksyVaatimus(pelitila, nykyinenKriisi.vaatimuskortti);
+    nykyinenKriisi = null;
+    piirraKaikki();
+    piirraKriisi(null);
+    asetaSeuraavaKuukausiNappiTila();
+  });
+
+  document.getElementById("kriisi-hylkaa-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "vaatimus") return;
+    siirryPuolustusvaiheeseen(nykyinenKriisi);
+  });
+
+  document.getElementById("kriisi-puolusta-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "puolustus") return;
+    const valittu = document.getElementById("kriisi-puolustus-valinta").value;
+    ratkaiseJaNaytaPuolustustulos(nykyinenKriisi, valittu);
+  });
+
+  document.getElementById("kriisi-rankaise-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "rangaistus") return;
+    rankaiseKapinalliset(pelitila, nykyinenKriisi);
+    nykyinenKriisi = null;
+    piirraKaikki();
+    piirraKriisi(null);
+    asetaSeuraavaKuukausiNappiTila();
+  });
+
+  document.getElementById("kriisi-armahda-nappi").addEventListener("click", () => {
+    if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "rangaistus") return;
+    armahdaKapinalliset(pelitila, nykyinenKriisi);
+    nykyinenKriisi = null;
+    piirraKaikki();
+    piirraKriisi(null);
+    asetaSeuraavaKuukausiNappiTila();
+  });
 });

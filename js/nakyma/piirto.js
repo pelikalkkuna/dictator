@@ -81,6 +81,51 @@ function piirraUutinen(kortti) {
   document.getElementById("uutinen-teksti").textContent = kortti.id + ": " + kortti.tapahtuma;
 }
 
+function piirraKriisi(kriisi) {
+  const kriisiEl = document.getElementById("kriisi");
+  const uhkaNapitEl = document.getElementById("kriisi-uhka-napit");
+  const vaatimusNapitEl = document.getElementById("kriisi-vaatimus-napit");
+  const puolustusOsioEl = document.getElementById("kriisi-puolustus-osio");
+  const rangaistusNapitEl = document.getElementById("kriisi-rangaistus-napit");
+
+  if (!kriisi) {
+    kriisiEl.classList.add("piilossa");
+    return;
+  }
+  kriisiEl.classList.remove("piilossa");
+
+  uhkaNapitEl.classList.add("piilossa");
+  vaatimusNapitEl.classList.add("piilossa");
+  puolustusOsioEl.classList.add("piilossa");
+  rangaistusNapitEl.classList.add("piilossa");
+
+  document.getElementById("kriisi-otsikko").textContent = kriisi.tyyppi;
+  const tekstiEl = document.getElementById("kriisi-teksti");
+  const kaynnistajanNimi = pelitila.ryhmat[kriisi.kaynnistaja].nimi;
+
+  if (kriisi.vaihe === "uhka") {
+    tekstiEl.textContent = kaynnistajanNimi + " nousee sinua vastaan! Neuvotteletko vai taisteletko?";
+    uhkaNapitEl.classList.remove("piilossa");
+  } else if (kriisi.vaihe === "vaatimus") {
+    tekstiEl.textContent = "Vaatimus: " + kriisi.vaatimuskortti.vaatimus;
+    vaatimusNapitEl.classList.remove("piilossa");
+  } else if (kriisi.vaihe === "puolustus") {
+    tekstiEl.textContent = "Ketä kutsut puolustamaan palatsia? Henkivartijat ovat aina mukana.";
+    const valintaEl = document.getElementById("kriisi-puolustus-valinta");
+    valintaEl.innerHTML = "";
+    for (const avain of kriisi.ehdokkaat) {
+      const optio = document.createElement("option");
+      optio.value = avain;
+      optio.textContent = pelitila.ryhmat[avain].nimi;
+      valintaEl.appendChild(optio);
+    }
+    puolustusOsioEl.classList.remove("piilossa");
+  } else if (kriisi.vaihe === "rangaistus") {
+    tekstiEl.textContent = "Voitit taistelun. Rankaisetko kapinalliset vai armahdatko heidät?";
+    rangaistusNapitEl.classList.remove("piilossa");
+  }
+}
+
 function piirraPeliOhi(viesti) {
   const peliOhiEl = document.getElementById("peli-ohi");
 

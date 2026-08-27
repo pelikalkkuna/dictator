@@ -82,6 +82,37 @@ body {
   display: none;
 }
 
+.kriisipaneeli {
+  border-left: 4px solid #b22222;
+  background: #2a2020;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.kriisipaneeli.piilossa {
+  display: none;
+}
+
+#kriisi-uhka-napit.piilossa,
+#kriisi-vaatimus-napit.piilossa,
+#kriisi-rangaistus-napit.piilossa,
+#kriisi-puolustus-osio.piilossa {
+  display: none;
+}
+
+#kriisi-uhka-napit button,
+#kriisi-vaatimus-napit button,
+#kriisi-rangaistus-napit button {
+  margin-right: 0.5rem;
+}
+
+#kriisi-puolustus-valinta {
+  width: 100%;
+  padding: 0.4rem;
+  margin-top: 0.5rem;
+}
+
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
