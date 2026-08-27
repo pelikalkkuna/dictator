@@ -11,3 +11,31 @@ body {
   padding: 1rem;
   text-align: center;
 }
+
+.kassaraportti {
+  border-left: 4px solid #2e8b2e;
+  background: #202a20;
+  padding: 0.5rem 1rem;
+  text-align: left;
+}
+
+.kassaraportti.kriisi {
+  border-left-color: #b22222;
+  background: #2a2020;
+}
+
+#ryhmat-lista {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+#ryhmat-lista li {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #333;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+}
