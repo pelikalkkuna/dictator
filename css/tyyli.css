@@ -58,6 +58,18 @@ body {
   margin-top: 0.5rem;
 }
 
+.uutinen {
+  border-left: 4px solid #555;
+  background: #232323;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.uutinen.piilossa {
+  display: none;
+}
+
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;

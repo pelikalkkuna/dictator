@@ -21,7 +21,17 @@ function naytaPaatosvalinta() {
 function suljePaatosvalinta() {
   paatosOdottaa = false;
   piirraPaatosvalinta(false);
+  kasitteleUutinen();
   asetaSeuraavaKuukausiNappiTila();
+}
+
+function kasitteleUutinen() {
+  const kortti = nostaUutinen(pelitila, uutiskortit);
+  if (kortti) {
+    sovellaUutinen(pelitila, kortti);
+  }
+  piirraKaikki();
+  piirraUutinen(kortti);
 }
 
 function aloitaAudienssi() {
@@ -72,10 +82,12 @@ function toteutaValittuPaatos() {
 
 document.addEventListener("DOMContentLoaded", () => {
   pelitila.audienssipakat = luoAudienssipakat(audienssikortit);
+  pelitila.uutispakka = luoUutispakka(uutiskortit);
 
   piirraKaikki();
   piirraAudienssi(null);
   piirraPaatosvalinta(false);
+  piirraUutinen(null);
 
   document.getElementById("seuraava-kuukausi-nappi").addEventListener("click", () => {
     pelitila.kuukausi += 1;

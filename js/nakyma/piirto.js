@@ -69,3 +69,14 @@ function piirraPaatosvalinta(naytetaanko) {
 
   document.getElementById("paatos-toteuta-nappi").disabled = kaytettavissa.length === 0;
 }
+
+function piirraUutinen(kortti) {
+  const uutinenEl = document.getElementById("uutinen");
+
+  if (!kortti) {
+    uutinenEl.classList.add("piilossa");
+    return;
+  }
+  uutinenEl.classList.remove("piilossa");
+  document.getElementById("uutinen-teksti").textContent = kortti.id + ": " + kortti.tapahtuma;
+}
