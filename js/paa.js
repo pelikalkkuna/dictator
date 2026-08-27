@@ -73,7 +73,29 @@ function kasitteleUutinen() {
     return;
   }
 
+  if (kasitteleAttentaattiTarkistus()) return;
+
   tarkistaJaAloitaKriisi();
+}
+
+// GDD 10: attentaatti - "voimattomien keino syöstä diktaattori vallasta". Palauttaa true
+// jos peli päättyi (attentaatti onnistui), jolloin kutsuja ei jatka kriisitarkistukseen.
+function kasitteleAttentaattiTarkistus() {
+  const yritys = tarkistaAttentaattiyritys(pelitila);
+  if (!yritys.tapahtuiko) {
+    piirraAttentaatti(null);
+    return false;
+  }
+
+  const tulos = ratkaiseAttentaatti(pelitila);
+  if (tulos.selvisi) {
+    piirraAttentaatti("Attentaattiyritys epäonnistui! Henkivartijasi pelastivat sinut.");
+    return false;
+  }
+
+  piirraAttentaatti("Attentaatti onnistui. Kuolit virantoimituksessa.");
+  merkitsePeliOhi("Attentaatti onnistui — kuolit. Peli päättyi.");
+  return true;
 }
 
 // GDD 9: voi laukaista missä vaiheessa tahansa - tarkistetaan käytännössä kerran per kuukausi,
@@ -190,6 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
   piirraAudienssi(null);
   piirraPaatosvalinta(false);
   piirraUutinen(null);
+  piirraAttentaatti(null);
   piirraKriisi(null);
   piirraPeliOhi(null);
 

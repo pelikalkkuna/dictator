@@ -126,6 +126,17 @@ function piirraKriisi(kriisi) {
   }
 }
 
+function piirraAttentaatti(viesti) {
+  const attentaattiEl = document.getElementById("attentaatti");
+
+  if (!viesti) {
+    attentaattiEl.classList.add("piilossa");
+    return;
+  }
+  attentaattiEl.classList.remove("piilossa");
+  document.getElementById("attentaatti-teksti").textContent = viesti;
+}
+
 function piirraPeliOhi(viesti) {
   const peliOhiEl = document.getElementById("peli-ohi");
 
