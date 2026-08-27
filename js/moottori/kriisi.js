@@ -33,6 +33,18 @@ function laskeTyytymattomyys(ryhma) {
   return ryhma.voima - ryhma.suosio;
 }
 
+// GDD 3.1/12: vallankumousvoima (REV STR) on "vaan rapsa" (Sasu, elokuu 2026) - pelaajalle
+// näytettävä varoituslukema poliisiraportissa (GDD 12: STRENGTH FOR REVOLUTION), EI osa
+// todellista taistelulaskentaa (ratkaisePuolustus käyttää GDD 9.5:n omaa kaavaa, ei tätä).
+// Kertoo pinnan alla kytevästä vaarasta ennen kuin kriisi edes laukeaa: perustaso 10 nousee
+// sitä mukaa kun kriisikykyisten ryhmien tyytymättömyys (voima-suosio) kasvaa.
+function laskeVallankumousvoimanPerustaso(pelitila) {
+  const tyytymattomyysSumma = KOTIMAAN_KRIISIRYHMAT.reduce((summa, avain) => {
+    return summa + Math.max(0, laskeTyytymattomyys(pelitila.ryhmat[avain]));
+  }, 0);
+  return 10 + tyytymattomyysSumma;
+}
+
 function parasPuolustusehdokas(pelitila, poissuljetut) {
   let paras = null;
   for (const avain of PUOLUSTUSEHDOKKAAT) {
@@ -141,6 +153,7 @@ function armahdaKapinalliset(pelitila, kriisi) {
 if (typeof module !== "undefined") {
   module.exports = {
     laskeTyytymattomyys,
+    laskeVallankumousvoimanPerustaso,
     parasPuolustusehdokas,
     puolustusehdokkaat,
     tarkistaKriisi,

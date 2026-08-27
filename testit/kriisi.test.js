@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { kriisikortit } = require("../js/data/kriisikortit.js");
 const {
   laskeTyytymattomyys,
+  laskeVallankumousvoimanPerustaso,
   parasPuolustusehdokas,
   puolustusehdokkaat,
   tarkistaKriisi,
@@ -35,6 +36,32 @@ function uusiTila(yliajot) {
 test("laskeTyytymattomyys on voima miinus suosio", () => {
   assert.equal(laskeTyytymattomyys({ suosio: 7, voima: 6 }), -1);
   assert.equal(laskeTyytymattomyys({ suosio: 2, voima: 8 }), 6);
+});
+
+test("laskeVallankumousvoimanPerustaso on 10 aloitusarvoilla (kaikki tyytymättömyys negatiivinen)", () => {
+  const tila = uusiTila();
+  assert.equal(laskeVallankumousvoimanPerustaso(tila), 10);
+});
+
+test("laskeVallankumousvoimanPerustaso nousee ryhmien tyytymättömyyden mukaan", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.suosio = 1; tila.ryhmat.armeija.voima = 8; // tyytym. 7
+  tila.ryhmat.talonpojat.suosio = 2; tila.ryhmat.talonpojat.voima = 5; // tyytym. 3
+  // maanomistajat pysyy negatiivisena (-1), ei lisää mitään
+  assert.equal(laskeVallankumousvoimanPerustaso(tila), 10 + 7 + 3);
+});
+
+test("laskeVallankumousvoimanPerustaso ei laske alle 10:n negatiivisilla tyytymättömyyksillä", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.suosio = 9; tila.ryhmat.armeija.voima = 0; // tyytym. -9
+  assert.equal(laskeVallankumousvoimanPerustaso(tila), 10);
+});
+
+test("laskeVallankumousvoimanPerustaso ei huomioi salaista poliisia tai sisseja", () => {
+  const tila = uusiTila();
+  tila.ryhmat.salainenPoliisi.suosio = 0; tila.ryhmat.salainenPoliisi.voima = 9; // tyytym. 9, ei kuulu laskentaan
+  tila.ryhmat.sissit.voima = 9;
+  assert.equal(laskeVallankumousvoimanPerustaso(tila), 10);
 });
 
 test("tarkistaKriisi: aloitusarvoilla ei kriisiä (tyytymättömyys -1, kynnys 3)", () => {

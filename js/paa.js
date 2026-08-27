@@ -292,6 +292,12 @@ document.addEventListener("DOMContentLoaded", () => {
     pelitila.kuukausi += 1;
     kasitteleSotaVelka(pelitila);
     kasitteleVallankumousvoimanPalautuminen(pelitila);
+    // GDD 12: REV STR on "vaan rapsa" (Sasu, elokuu 2026) - pelaajalle näytettävä varoituslukema,
+    // ei osa taistelulaskentaa. Seuraa kriisikykyisten ryhmien tyytymättömyyttä paitsi kun
+    // sodanjälkeinen piikki+palautuminen on kesken (silloin se ohittaa perustason väliaikaisesti).
+    if (pelitila.vallankumousvoimaPalautusJaljella <= 0) {
+      pelitila.vallankumousvoima = laskeVallankumousvoimanPerustaso(pelitila);
+    }
     kasitteleKassaraportti(pelitila);
     piirraKaikki();
     aloitaAudienssi();
