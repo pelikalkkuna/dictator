@@ -7,8 +7,9 @@
 //   N2_SISSIT_MAX       — sissien voima asetetaan suoraan 9:ään.
 //   N3_SOTA_TODO        — "Sota laukeaa": sodan ratkaisu (GDD 8. luku) EI VIELÄ toteutettu,
 //                         kortti kuluu mutta ei tee mitään ennen sotajärjestelmää.
-//   N4_EI_MAARITELTY    — "Armeijan voima romahtaa" ilman lukua GDD:ssä. EI TOTEUTETTU,
-//                         odottaa Sasun vahvistusta (ks. CLAUDE.md muistiinpanot).
+//   N4_ARMEIJA_PUOLITA  — "Armeijan voima romahtaa": armeijan voima puolitetaan (pyöristys alas),
+//                         mutta ei koskaan alle 1:n (Sasu, elokuu 2026: "iso voima iso vaikutus,
+//                         pieni voima pienempi vaikutus, ei kuitenkaan mene ikinä nollaan").
 //   N5_EI_MAARITELTY    — "Kassatulot laskevat" / "−tuloja" ilman lukua GDD:ssä. EI TOTEUTETTU,
 //                         odottaa Sasun vahvistusta.
 //   N6_POLIISI_NOLLAAN  — salaisen poliisin suosio JA voima asetetaan 0:aan.
@@ -27,7 +28,7 @@ const uutiskortit = {
     { id: "N3", tapahtuma: "Leftoto hyökkää!", toistuva: false,
       erikoinen: "N3_SOTA_TODO" },
     { id: "N4", tapahtuma: "Armeijan asevarasto räjähti", toistuva: false,
-      erikoinen: "N4_EI_MAARITELTY" },
+      erikoinen: "N4_ARMEIJA_PUOLITA" },
     { id: "N5", tapahtuma: "Banaanien hinta romahtaa", toistuva: false,
       erikoinen: "N5_EI_MAARITELTY" },
     { id: "N6", tapahtuma: "Presidentti hukkasi poliisin kansiot", toistuva: false,

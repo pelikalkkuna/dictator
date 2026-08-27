@@ -68,14 +68,35 @@ test("N7 puolittaa Leftoton voiman pyöristäen alas", () => {
   assert.equal(tila.ryhmat.leftoto.voima, 3); // floor(7/2)
 });
 
-test("N3/N4/N5 eivät vielä tee mitään (odottavat sotaa / Sasun vahvistusta)", () => {
+test("N3/N5 eivät vielä tee mitään (odottavat sotaa / Sasun vahvistusta)", () => {
   const tila = uusiTila();
   const alkuperainenKassa = tila.kassa;
-  for (const id of ["N3", "N4", "N5"]) {
+  for (const id of ["N3", "N5"]) {
     sovellaUutinen(tila, etsiUutinen(uutiskortit, id));
   }
   assert.equal(tila.kassa, alkuperainenKassa);
   assert.equal(tila.ryhmat.armeija.voima, 6);
+});
+
+test("N4 puolittaa armeijan voiman pyöristäen alas", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.voima = 7;
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N4"));
+  assert.equal(tila.ryhmat.armeija.voima, 3); // floor(7/2)
+});
+
+test("N4 ei koskaan puolita alle 1:n", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.voima = 1;
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N4"));
+  assert.equal(tila.ryhmat.armeija.voima, 1); // floor(1/2)=0, mutta pidetään 1:ssä
+});
+
+test("N4 jättää voiman 0:aan jos se on jo 0", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.voima = 0;
+  sovellaUutinen(tila, etsiUutinen(uutiskortit, "N4"));
+  assert.equal(tila.ryhmat.armeija.voima, 0);
 });
 
 test("tavallinen pieni uutinen (N8) soveltaa suosion ja talouden", () => {

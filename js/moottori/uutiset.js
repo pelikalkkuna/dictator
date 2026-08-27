@@ -69,10 +69,14 @@ function sovellaUutinen(pelitila, kortti) {
       pelitila.ryhmat.sissit.voima = 9;
       return;
     case "N3_SOTA_TODO":
-    case "N4_EI_MAARITELTY":
     case "N5_EI_MAARITELTY":
       // Odottaa vastaavaa järjestelmää (sota / Sasun vahvistus) - ei vaikutusta vielä.
       return;
+    case "N4_ARMEIJA_PUOLITA": {
+      const nykyinen = pelitila.ryhmat.armeija.voima;
+      pelitila.ryhmat.armeija.voima = nykyinen === 0 ? 0 : Math.max(1, Math.floor(nykyinen / 2));
+      return;
+    }
     case "N6_POLIISI_NOLLAAN":
       pelitila.ryhmat.salainenPoliisi.suosio = 0;
       pelitila.ryhmat.salainenPoliisi.voima = 0;
