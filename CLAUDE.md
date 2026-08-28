@@ -37,6 +37,18 @@ Sasu generoi kuvat Geminillä (premium-tili). **Sovitut koot: korttitapahtumat 1
 - **`kuvat/LUETTELO.md`** on generoitu tarkistuslista (`node tyokalut/luo-kuvaluettelo.js`): jokaisen kuvan tiedostonimi ja se tapahtumateksti johon se liittyy. Aja uudelleen jos kortteja lisätään.
 - **`tyokalut/paketoi.py`** kokoaa pelin yhdeksi HTML-tiedostoksi ja upottaa olemassa olevat kuvat data-URI:eina. **Kun kuvasto on valmis (~5 Mt, base64:nä ~6,7 Mt), oikea jakelutapa on GitHub Pages erillisillä tiedostoilla ja lazy-latauksella** — paketti on siihen liian raskas puhelimelle.
 
+## Julkaisu (GitHub Pages, elokuu 2026)
+
+Peli julkaistaan osoitteeseen **https://pelikalkkuna.github.io/dictator/** GitHub Actionsilla (`.github/workflows/pages.yml`). Repo on julkinen, joten Pages on ilmainen.
+
+- **Testit ajetaan ennen julkaisua.** Jos `node --test testit/*.test.js` hajoaa, sivustoa ei julkaista. Rikkinäinen sääntömuutos ei siis päädy tuotantoon.
+- **Julkaistaan vain se mitä peli tarvitsee:** `index.html`, `css/`, `js/`, `kuvat/` ja `jakokuva.jpg`. GDD, testit, työkalut ja `materiaali/` jäävät pois (25 tiedostoa, ~464 kt ilman tapahtumakuvia).
+- **Kaikki polut ovat suhteellisia**, joten peli toimii alihakemistossa `/dictator/` ilman muutoksia. Tämä on testattu selaimessa palvelemalla koottu sivusto alihakemistosta.
+- **Haaroista:** workflow kuuntelee sekä `main`-haaraa että kehityshaaraa, koska kaikki pelikoodi on toistaiseksi kehityshaarassa ja `main` sisältää vain projektin alun. Kun kehityshaara on yhdistetty mainiin, kehityshaaran rivin voi poistaa workflow'sta.
+- **`enablement: true`** kytkee Pagesin päälle automaattisesti ensimmäisellä ajolla. Jos se estyy, kytke käsin: Settings → Pages → Source: GitHub Actions.
+- **Linkin esikatselu:** `jakokuva.jpg` (1200 × 630, pakattu `materiaali/kuvat/mainos.jpeg`:stä) ja Open Graph -metatiedot `index.html`:ssä. Favicon on SVG-data-URI samassa tiedostossa, joten ylimääräistä pyyntöä tai 404:ää ei tule.
+- **Välimuisti:** Pages tarjoilee kuvat välimuistiin. Jos korvaat kuvan samannimisellä uudella versiolla, selain voi näyttää vanhan — pakota päivitys (Ctrl/Cmd+Shift+R) tai vaihda tiedostonimeä.
+
 ## Projektin kuvaus
 
 Vuoropohjainen selviytymisstrategia, jossa pelaaja on 1960–70-lukujen latinalaisamerikkalaisen Ritimban tasavallan diktaattori. Pohjautuu Don Priestleyn ja Andy Frenchin peliin (DKTronics, 1983 — Commodore 64 / ZX Spectrum). Tämä on selainpohjainen moderni remake.
@@ -52,7 +64,7 @@ Peli on reverse-engineeröity pelaamalla alkuperäistä C64-versiota ja säänt�
 - **Korttidata:** JSON-rakenteessa
 - **Pysyvä tallennus:** localStorage (vain highscoret)
 - **Alustat:** selain mobiilissa ja työpöydällä
-- **Hosting:** GitHub Pages / Netlify / Cloudflare Pages
+- **Hosting:** GitHub Pages (https://pelikalkkuna.github.io/dictator/)
 - **Versionhallinta:** Git + GitHub (linkattu projektikansioon)
 
 ## Kansio- ja tiedostorakenne

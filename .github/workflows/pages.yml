@@ -1,0 +1,76 @@
+name: Julkaise GitHub Pagesiin
+
+# Julkaisee pelin osoitteeseen https://pelikalkkuna.github.io/dictator/
+#
+# HUOM haaroista: kaikki pelikoodi elää toistaiseksi kehityshaarassa, ja main sisältää vain
+# projektin alun (GDD + CLAUDE.md). Siksi julkaisu kuuntelee molempia. Kun kehityshaara on
+# yhdistetty mainiin, kehityshaaran rivin voi poistaa alta - main riittää.
+on:
+  push:
+    branches:
+      - main
+      - claude/dictator-game-plan-96ajrh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Ei rinnakkaisia julkaisuja, mutta kesken olevaa ei myöskään peruuteta.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  testaa:
+    name: Sääntötestit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Peli ei julkaistu jos numeeriset säännöt ovat rikki.
+      - run: node --test testit/*.test.js
+
+  julkaise:
+    name: Julkaise
+    needs: testaa
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.julkaisu.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Julkaistaan vain se mitä peli tarvitsee - ei GDD:tä, testejä, työkaluja
+      # eikä materiaali/-kansion raakoja mainosaineistoja.
+      - name: Kokoa sivusto
+        run: |
+          mkdir -p _site
+          cp index.html jakokuva.jpg _site/
+          cp -r css js _site/
+          if [ -d kuvat ]; then
+            cp -r kuvat _site/
+            rm -f _site/kuvat/LUETTELO.md
+          fi
+          find _site -name '.gitkeep' -delete
+          # Estää Jekyll-käsittelyn (muuten alaviivalla alkavat polut katoaisivat).
+          touch _site/.nojekyll
+          echo "Julkaistava sisältö:"
+          find _site -type f | sort | head -40
+          echo "Tiedostoja yhteensä: $(find _site -type f | wc -l)"
+          echo "Koko: $(du -sh _site | cut -f1)"
+
+      # enablement: true kytkee Pagesin päälle ensimmäisellä ajolla, joten repon asetuksia
+      # ei tarvitse käydä käsin muuttamassa. Jos tili estää sen, kytke Pages päälle
+      # kohdasta Settings -> Pages -> Source: GitHub Actions.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: julkaisu
+        uses: actions/deploy-pages@v4
