@@ -2,14 +2,14 @@ name: Julkaise GitHub Pagesiin
 
 # Julkaisee pelin osoitteeseen https://pelikalkkuna.github.io/dictator/
 #
-# HUOM haaroista: kaikki pelikoodi elää toistaiseksi kehityshaarassa, ja main sisältää vain
-# projektin alun (GDD + CLAUDE.md). Siksi julkaisu kuuntelee molempia. Kun kehityshaara on
-# yhdistetty mainiin, kehityshaaran rivin voi poistaa alta - main riittää.
+# Julkaistaan vain mainista. GitHub luo Pagesin käyttöönotossa github-pages-ympäristön,
+# joka sallii julkaisun oletusarvoisesti VAIN oletushaarasta - kehityshaarasta ajettuna
+# julkaisutyö torjutaan sekunnissa ennen kuin yhtäkään vaihetta ajetaan. Muutokset menevät
+# siis tuotantoon vasta kun ne on yhdistetty mainiin.
 on:
   push:
     branches:
       - main
-      - claude/dictator-game-plan-96ajrh
   workflow_dispatch:
 
 permissions:
