@@ -146,7 +146,7 @@ async function suoritaVaihe(vaihe) {
       break;
     case "poliisiraportti1":
     case "poliisiraportti2":
-      suoritaPoliisiraporttivaihe();
+      suoritaPoliisiraporttivaihe(vaihe.avain === "poliisiraportti2");
       break;
     case "audienssi":
       suoritaAudienssivaihe();
@@ -160,7 +160,18 @@ async function suoritaVaihe(vaihe) {
   }
 
   paivitaEteneminen();
+  vieritaNakyviin(VAIHEEN_PANEELI[vaihe.avain]);
 }
+
+// Mihin paneeliin kunkin vaiheen huomio kuuluu, jotta uusi vaihe tuodaan näkyviin.
+const VAIHEEN_PANEELI = {
+  kassaraportti: "kassavaihe",
+  poliisiraportti1: "poliisiraportti",
+  poliisiraportti2: "poliisiraportti",
+  audienssi: "audienssi",
+  paatos: "paatos",
+  uutiset: "uutinen"
+};
 
 // GDD 4: "ATTENTAATTI ja VALLANKUMOUS / KAAPPAUS / KAPINA voivat laueta missä vaiheessa
 // tahansa ja ketjuuntua." Kriisitarkistus on deterministinen (tarkistaKriisi ei heitä noppaa),
@@ -222,7 +233,9 @@ function suoritaKuukaudenAvaus() {
 
 // ---------------------------------------------------------------- vaiheet 2 ja 6: poliisiraportti
 
-function suoritaPoliisiraporttivaihe() {
+function suoritaPoliisiraporttivaihe(kuunLopussa) {
+  siirraPoliisiraporttiVaiheeseen(kuunLopussa);
+
   const saatavuus = poliisiraportinSaatavuus(pelitila);
   piirraPoliisiraportti({ saatavuus, raportti: null });
   // Kun raportti ei ole saatavilla, pelaajalla ei ole valintaa - näytetään vain syy.

@@ -10,7 +10,7 @@ Päivitetty: elokuu 2026
 - **Pelikoodi:** kohdat 1–11 valmiit JA kuukausikierros + GDD 12:n poliisiraportti rakennettu. Runko, kassajärjestelmä, ryhmät/mittarit, audienssijärjestelmä (42 korttia), presidentin päätökset (19 korttia), uutisvaihe (48 korttia), sota, vallankumous/kaappaus/kapina, attentaatti, pako ja pisteytys sekä UI-kiillotus (GDD 1.5: swipe-audienssit, 44px-napit, mobiilioptimointi) toimivat selaimessa. Yksinkertaistettu kuukausikierto on korvattu vaihekoneella (`js/moottori/kuukausikierros.js`): pelaaja etenee vaihe kerrallaan, vaihe-indikaattori näkyy ruudulla. Kierros on pelitestin jälkeen 6-vaiheinen (ks. Pelitestipalaute 1).
 - **Testaus:** `node --test testit/*.test.js` (tai `npm test`) — 135 testiä kattaa kassaraportin, mittarien rajauksen, audienssit, presidentin päätökset, uutisvaiheen, sodan, kriisit, attentaatin, paon, pisteytyksen, kuukausikierroksen vaihejärjestyksen, poliisiraportin ja suurvalta-avun, kaikki vihreää. UI-vuorovaikutus (swipe, vaiheiden napit, paneelien näkyvyys) testataan Playwrightilla selaimessa, ei Node-testeissä.
 - **KAIKKI avoimet KYSYTTÄVÄ SASULTA -kohdat on nyt käyty läpi ja ratkaistu (elokuu 2026)** — ks. muistiinpanot alla jokaisen päätöksen yksityiskohdista (A3:n satunnaisväli, N3/N4/N5/N12:n uudet säännöt, REV STR:n rooli ja käyrä, kriisin ja vuoristopaon todennäköisyyspohjainen taistelu, attentaatin 90%-katto).
-- **Seuraava askel:** ensimmäinen selainpelitestaus tehty (Sasu, elokuu 2026) ja sen palaute toteutettu — ks. "Pelitestipalaute 1" alla. Seuraava askel on toinen pelitestikierros.
+- **Seuraava askel:** pelitestikierrokset 1 ja 2 tehty ja palautteet toteutettu (ks. osiot alla). Peli on julkaistu ja pelattavissa. Seuraavaksi tapahtumakuvien tuottaminen ja lisää pelitestausta.
 
 ## Pelitestipalaute 1 (Sasu, elokuu 2026) — toteutettu
 
@@ -26,6 +26,13 @@ Ensimmäinen oikea läpipeluu selaimessa. Kaikki kohdat toteutettu:
 - **KORJATTU BUGI — päätös ei antanut mitään palautetta:** `toteutaPaatos`:n paluuarvo heitettiin pois `paa.js`:ssä. Siksi Venäjän laina pelin alussa oli täysin hiljainen (aloitusarvoilla molempien suurvaltojen suosio on 7 → suosioero 0 → apu 0, GDD 3.4:n mukaisesti) ja poltti silti kertakäyttöisen kortin, eikä helikopterin ostosta jäänyt mitään merkkiä ("en ole varma ehdinkö ostaa sen"). Nyt jokainen päätös kertoo tuloksensa. Helikopterin pakologiikka itsessään oli oikein.
 
 **Avoin: oikeat ääniraidat.** Sasu toivoi kansallislaulua lainan odotukseen. Nykyiset äänet ovat syntetisoituja; oikeat kappaleet vaatisivat äänitiedostot ja päätöksen tekijänoikeuksista. `materiaali/aanet/`:n voittomarssi on eri tarkoitukseen (web-mainonta).
+
+## Pelitestipalaute 2 (Sasu, elokuu 2026) — korjattu
+
+- **KORJATTU BUGI — kuukausi jumittui vaiheeseen 6, "Jatka" harmaana.** Poliisiraportti on ainoa vaihe joka esiintyy kuukaudessa kahdesti (vaiheet 2 ja 6), mutta paneeleita on vain yksi ja se sijaitsi DOM:issa kuukauden alussa. Koska paneelit jäävät näkyviin kuun loppuun, vaiheen 6 raportti piirtyi uutisten YLÄPUOLELLE: mitattuna ainoa toimiva nappi oli 892 px ylempänä sivulla, eli 844 px korkealla puhelimella kokonaan ruudun ulkopuolella. Pelaaja näki pohjalla vain lukossa olevan "Jatka"-napin. Korjattu `siirraPoliisiraporttiVaiheeseen`-funktiolla (`piirto.js`), joka siirtää paneelin DOM:issa siihen kohtaan jossa se kuukauden kulussa on. Mittaus korjauksen jälkeen: 52 px.
+- **Lisätty automaattinen vieritys uuteen vaiheeseen** (`vieritaNakyviin`). Kuukausi kertyy ylhäältä alas, joten uusi vaihe voi jäädä taitteen alle myös muissa kohdissa; nyt se tuodaan näkyviin. Kunnioittaa `prefers-reduced-motion`-asetusta.
+
+**Testausoppi — kolmas samaa sukua oleva bugi.** Playwrightin `page.click()` löytää ja klikkaa elementin riippumatta siitä missä se on sivulla, joten se EI paljasta "kontrolli on pelaajan ulottumattomissa" -vikoja. Soak-testit menivät läpi koko ajan. Aiemmat kaksi samaa perhettä: `setPointerCapture` vei napilta click-tapahtuman, ja `style.display=""` ei kumonnut CSS:n `display:none`-sääntöä. **Kun UI-vaiheita lisätään, mittaa myös SIJAINTI:** onko ainoa toimiva kontrolli sillä ruudulla jolla pelaaja on. `getBoundingClientRect()` + `window.scrollY` + `innerHeight` riittää.
 
 ## Tapahtumakuvat (elokuu 2026)
 
