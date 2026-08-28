@@ -45,7 +45,7 @@ Peli julkaistaan osoitteeseen **https://pelikalkkuna.github.io/dictator/** GitHu
 - **Julkaistaan vain se mitä peli tarvitsee:** `index.html`, `css/`, `js/`, `kuvat/` ja `jakokuva.jpg`. GDD, testit, työkalut ja `materiaali/` jäävät pois (25 tiedostoa, ~464 kt ilman tapahtumakuvia).
 - **Kaikki polut ovat suhteellisia**, joten peli toimii alihakemistossa `/dictator/` ilman muutoksia. Tämä on testattu selaimessa palvelemalla koottu sivusto alihakemistosta.
 - **Haaroista:** workflow kuuntelee sekä `main`-haaraa että kehityshaaraa, koska kaikki pelikoodi on toistaiseksi kehityshaarassa ja `main` sisältää vain projektin alun. Kun kehityshaara on yhdistetty mainiin, kehityshaaran rivin voi poistaa workflow'sta.
-- **`enablement: true`** kytkee Pagesin päälle automaattisesti ensimmäisellä ajolla. Jos se estyy, kytke käsin: Settings → Pages → Source: GitHub Actions.
+- **Pages on kytkettävä päälle kerran käsin:** Settings → Pages → Source: **GitHub Actions**. Tätä ei voi automatisoida workflow'sta — kokeiltu `enablement: true`, mutta workflow'n oma GITHUB_TOKEN ei saa luoda Pages-sivustoa (`Create Pages site failed: Resource not accessible by integration`). Kun sivusto on kerran luotu, julkaisu toimii automaattisesti joka pushilla.
 - **Linkin esikatselu:** `jakokuva.jpg` (1200 × 630, pakattu `materiaali/kuvat/mainos.jpeg`:stä) ja Open Graph -metatiedot `index.html`:ssä. Favicon on SVG-data-URI samassa tiedostossa, joten ylimääräistä pyyntöä tai 404:ää ei tule.
 - **Välimuisti:** Pages tarjoilee kuvat välimuistiin. Jos korvaat kuvan samannimisellä uudella versiolla, selain voi näyttää vanhan — pakota päivitys (Ctrl/Cmd+Shift+R) tai vaihda tiedostonimeä.
 

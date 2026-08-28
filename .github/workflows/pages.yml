@@ -63,12 +63,12 @@ jobs:
           echo "Tiedostoja yhteensä: $(find _site -type f | wc -l)"
           echo "Koko: $(du -sh _site | cut -f1)"
 
-      # enablement: true kytkee Pagesin päälle ensimmäisellä ajolla, joten repon asetuksia
-      # ei tarvitse käydä käsin muuttamassa. Jos tili estää sen, kytke Pages päälle
-      # kohdasta Settings -> Pages -> Source: GitHub Actions.
+      # KERTALUONTOINEN KÄSIN TEHTÄVÄ VAIHE: Pages pitää kytkeä päälle repon asetuksista
+      # (Settings -> Pages -> Source: GitHub Actions) ennen kuin tämä vaihe menee läpi.
+      # Kokeiltu myös enablement: true, mutta workflow'n oma GITHUB_TOKEN ei saa luoda
+      # Pages-sivustoa: "Create Pages site failed. Error: Resource not accessible by
+      # integration". Kun sivusto on kerran luotu, tämä toimii jatkossa automaattisesti.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
