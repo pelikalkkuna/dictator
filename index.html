@@ -10,6 +10,7 @@
 <main id="peli">
   <h1>Ritimban Tasavalta</h1>
   <p id="kuukausi-teksti"></p>
+  <p id="vaihe-teksti" class="vaihe-teksti piilossa"></p>
 
   <div id="kassaraportti" class="kassaraportti">
     <p id="kassa-teksti"></p>
@@ -17,6 +18,25 @@
 
   <h2>Ryhmät</h2>
   <ul id="ryhmat-lista"></ul>
+
+  <div id="kassavaihe" class="kassaraportti piilossa">
+    <h2>Kassaraportti</h2>
+    <p id="kassavaihe-teksti"></p>
+  </div>
+
+  <div id="poliisiraportti" class="poliisiraportti piilossa">
+    <h2>Poliisiraportti</h2>
+    <p id="poliisiraportti-teksti"></p>
+    <div id="poliisiraportti-napit" class="piilossa">
+      <button id="poliisiraportti-osta-nappi">Osta raportti</button>
+      <button id="poliisiraportti-ohita-nappi">Ohita</button>
+    </div>
+    <div id="poliisiraportti-sisalto" class="piilossa">
+      <ul id="poliisiraportti-lista"></ul>
+      <p id="poliisiraportti-voimat"></p>
+      <p class="poliisiraportti-selite">Merkki A = attentaattiuhka. Numero = vallankumous-/kaappaus-/kapinauhka.</p>
+    </div>
+  </div>
 
   <div id="audienssi" class="audienssi piilossa">
     <h2>Audienssi</h2>
@@ -101,6 +121,8 @@
 <script src="js/data/kriisikortit.js"></script>
 <script src="js/moottori/kriisi.js"></script>
 <script src="js/moottori/attentaatti.js"></script>
+<script src="js/moottori/poliisiraportti.js"></script>
+<script src="js/moottori/kuukausikierros.js"></script>
 <script src="js/moottori/pako.js"></script>
 <script src="js/moottori/pisteytys.js"></script>
 <script src="js/nakyma/piirto.js"></script>

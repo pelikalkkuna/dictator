@@ -156,6 +156,7 @@ function armahdaKapinalliset(pelitila, kriisi) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    TYYTYMATTOMYYS_KYNNYS,
     laskeTyytymattomyys,
     laskeVallankumousvoimanPerustaso,
     parasPuolustusehdokas,

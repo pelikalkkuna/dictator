@@ -1,6 +1,12 @@
 let nykyinenAudienssi = null;
-let paatosOdottaa = false;
 let nykyinenKriisi = null;
+
+// GDD 4: kuukausikierroksen tila. null = kuukausi ei ole käynnissä (odotetaan aloitusta).
+let kierros = null;
+let kuukausiaAloitettu = 0;
+// true kun käynnissä oleva vaihe odottaa pelaajan omaa valintaa omista napeistaan
+// (audienssi, päätös, poliisiraportin osto) - silloin yleinen "Jatka" on lukossa.
+let odottaaValintaa = false;
 
 function piirraKaikki() {
   piirraKuukausi();
@@ -8,10 +14,23 @@ function piirraKaikki() {
   piirraRyhmat();
 }
 
-function asetaSeuraavaKuukausiNappiTila() {
-  const audienssiOdottaa = nykyinenAudienssi && !nykyinenAudienssi.pakkoEi;
-  document.getElementById("seuraava-kuukausi-nappi").disabled =
-    pelitila.peliOhi || !!audienssiOdottaa || paatosOdottaa || !!nykyinenKriisi;
+function onkoVaiheessa(...avaimet) {
+  const vaihe = kierros && nykyinenVaihe(kierros);
+  return !!vaihe && avaimet.includes(vaihe.avain);
+}
+
+function paivitaEteneminen() {
+  const nappi = document.getElementById("seuraava-kuukausi-nappi");
+
+  if (pelitila.peliOhi) {
+    nappi.disabled = true;
+    return;
+  }
+
+  nappi.textContent = kierros === null
+    ? "Aloita kuukausi " + (kuukausiaAloitettu === 0 ? pelitila.kuukausi : pelitila.kuukausi + 1)
+    : "Jatka";
+  nappi.disabled = odottaaValintaa || !!nykyinenKriisi;
 }
 
 function merkitsePeliOhi(viesti, pakeniHengissa) {
@@ -19,8 +38,10 @@ function merkitsePeliOhi(viesti, pakeniHengissa) {
   pelitila.peliOhi = true;
   pelitila.peliOhiViesti = viesti;
   pelitila.peliOhiPisteet = pisteet;
+  kierros = null;
+  piirraVaihe(null);
   piirraPeliOhi(viesti, pisteet);
-  asetaSeuraavaKuukausiNappiTila();
+  paivitaEteneminen();
 }
 
 function tarkistaSotalaukaisijat(kortti) {
@@ -33,6 +54,299 @@ function tarkistaSotalaukaisijat(kortti) {
     pelitila.helikopteriOstettu = true;
   }
 }
+
+// ---------------------------------------------------------------- kuukausikierros
+
+function tyhjennaKuukaudenPaneelit() {
+  piirraAudienssi(null);
+  piirraPaatosvalinta(false);
+  piirraUutinen(null);
+  piirraAttentaatti(null);
+  piirraKassavaihe(null);
+  piirraPoliisiraportti(null);
+}
+
+function aloitaUusiKuukausi() {
+  if (kuukausiaAloitettu > 0) pelitila.kuukausi += 1;
+  kuukausiaAloitettu += 1;
+
+  kierros = aloitaKuukausi();
+  tyhjennaKuukaudenPaneelit();
+  siirraSeuraavaanVaiheeseen();
+}
+
+function siirraSeuraavaanVaiheeseen() {
+  const vaihe = seuraavaVaihe(kierros);
+
+  if (!vaihe) {
+    kierros = null;
+    piirraVaihe(null);
+    odottaaValintaa = false;
+    paivitaEteneminen();
+    return;
+  }
+
+  piirraVaihe(vaihe);
+  suoritaVaihe(vaihe);
+}
+
+function suoritaVaihe(vaihe) {
+  odottaaValintaa = false;
+
+  switch (vaihe.avain) {
+    case "kassaraportti1":
+      suoritaKuukaudenAvaus();
+      break;
+    case "poliisiraportti1":
+    case "poliisiraportti2":
+      suoritaPoliisiraporttivaihe();
+      break;
+    case "audienssi":
+      suoritaAudienssivaihe();
+      break;
+    case "kassaraportti2":
+      suoritaValikassaraportti(kierros.audienssinKassavaikutus, "Audienssin");
+      break;
+    case "paatos":
+      suoritaPaatosvaihe();
+      break;
+    case "kassaraportti3":
+      suoritaValikassaraportti(kierros.paatoksenKassavaikutus, "Päätöksen");
+      break;
+    case "uutiset":
+      suoritaUutisvaihe();
+      break;
+  }
+
+  paivitaEteneminen();
+}
+
+// GDD 4: "ATTENTAATTI ja VALLANKUMOUS / KAAPPAUS / KAPINA voivat laueta missä vaiheessa
+// tahansa ja ketjuuntua." Kriisitarkistus on deterministinen (tarkistaKriisi ei heitä noppaa),
+// joten se voidaan ajaa jokaisen tilaa muuttavan vaiheen jälkeen ilman että kriisien määrä
+// muuttuu - kriisi vain laukeaa heti sen teon jälkeen joka kaatoi kupin, ei vasta kuun lopussa.
+// Attentaatti sen sijaan on satunnainen (D3/kk per A-ryhmä), joten se heitetään tasan kerran
+// kuukaudessa uutisvaiheessa, kuten GDD 10 määrää.
+//
+// Palauttaa true jos kierros keskeytyi (peli päättyi tai kriisi otti vallan).
+function tarkistaKeskeytykset() {
+  if (pelitila.peliOhi) return true;
+  return tarkistaJaAloitaKriisi();
+}
+
+// Kutsutaan kun pelaajan oma valinta päätti vaiheen (audienssi, päätös) tai kun kriisi
+// ratkesi voittoon kesken kuukauden - jatketaan kierrosta ellei mikään keskeyttänyt.
+function jatkaKierrosta() {
+  if (tarkistaKeskeytykset() || !kierros) {
+    paivitaEteneminen();
+    return;
+  }
+  siirraSeuraavaanVaiheeseen();
+}
+
+// ---------------------------------------------------------------- vaihe 1: kassaraportti
+
+function suoritaKuukaudenAvaus() {
+  const velkaaEnnen = pelitila.sotaVelkaKuukausiaJaljella;
+
+  kasitteleSotaVelka(pelitila);
+  kasitteleVallankumousvoimanPalautuminen(pelitila);
+  // GDD 12: REV STR on "vaan rapsa" (Sasu, elokuu 2026) - pelaajalle näytettävä varoituslukema,
+  // ei osa taistelulaskentaa. Seuraa kriisikykyisten ryhmien tyytymättömyyttä paitsi kun
+  // sodanjälkeinen piikki+palautuminen on kesken (silloin se ohittaa perustason väliaikaisesti).
+  if (pelitila.vallankumousvoimaPalautusJaljella <= 0) {
+    pelitila.vallankumousvoima = laskeVallankumousvoimanPerustaso(pelitila);
+  }
+  kasitteleKassaraportti(pelitila);
+  piirraKaikki();
+
+  let teksti = "Kuukausikulut " + muotoileRaha(pelitila.kuukausikulut) + " vähennetty. "
+    + "Kassa: " + muotoileRaha(pelitila.kassa) + ".";
+  if (velkaaEnnen > 0) {
+    teksti += " Sodan jälkilasku: kotimaan ryhmien suosio −1 (" + velkaaEnnen + " kk jäljellä).";
+  }
+  if (pelitila.kassakriisi) {
+    teksti += " KASSAKRIISI — rahalliset toiminnot lukossa.";
+  }
+  piirraKassavaihe(teksti);
+}
+
+// ---------------------------------------------------------------- vaiheet 2 ja 8: poliisiraportti
+
+function suoritaPoliisiraporttivaihe() {
+  const saatavuus = poliisiraportinSaatavuus(pelitila);
+  piirraPoliisiraportti({ saatavuus, raportti: null });
+  // Kun raportti ei ole saatavilla, pelaajalla ei ole valintaa - näytetään vain syy.
+  odottaaValintaa = saatavuus.saatavilla;
+}
+
+// ---------------------------------------------------------------- vaihe 3: audienssi
+
+function suoritaAudienssivaihe() {
+  piirraKassavaihe(null);
+  piirraPoliisiraportti(null);
+
+  kierros.audienssinKassaEnnen = otaKassatilanne(pelitila);
+  const tulos = valitseAudienssi(pelitila, audienssikortit, heitaD3);
+
+  // GDD 4.1: jos kaikkien kolmen ryhmän pakat ovat tyhjät, audienssia ei pidetä tässä kuussa.
+  if (!tulos) {
+    nykyinenAudienssi = null;
+    piirraAudienssi({ tyhja: true });
+    kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
+    return;
+  }
+
+  // GDD 3.6: kassan kuivuessa rahallinen vaatimus muuttuu automaattisesti pakko-EI:ksi.
+  if (onkoPakkoEi(pelitila, tulos.kortti)) {
+    hylkaaAudienssi(pelitila, tulos.ryhmaAvain, tulos.kortti);
+    nykyinenAudienssi = null;
+    kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
+    piirraKaikki();
+    piirraAudienssi({ ryhmaAvain: tulos.ryhmaAvain, kortti: tulos.kortti, pakkoEi: true });
+    tarkistaKeskeytykset();
+    return;
+  }
+
+  nykyinenAudienssi = tulos;
+  piirraAudienssi(nykyinenAudienssi);
+  odottaaValintaa = true;
+}
+
+function ratkaiseAudienssi(hyvaksytty) {
+  if (!onkoVaiheessa("audienssi")) return;
+  if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi || nykyinenAudienssi.tyhja) return;
+
+  const ratkaistu = nykyinenAudienssi;
+
+  if (hyvaksytty) {
+    hyvaksyAudienssi(pelitila, ratkaistu.kortti);
+    tarkistaSotalaukaisijat(ratkaistu.kortti);
+  } else {
+    hylkaaAudienssi(pelitila, ratkaistu.ryhmaAvain, ratkaistu.kortti);
+  }
+
+  nykyinenAudienssi = null;
+  odottaaValintaa = false;
+  kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
+
+  piirraKaikki();
+  piirraAudienssi({ ratkaistu: true, ryhmaAvain: ratkaistu.ryhmaAvain, kortti: ratkaistu.kortti, hyvaksytty });
+
+  jatkaKierrosta();
+}
+
+// GDD 1.5: swipe-mekaniikka audiensseissa (oikealle = kyllä, vasemmalle = ei).
+function alustaAudienssiSwipe() {
+  const audienssiEl = document.getElementById("audienssi");
+  const SWIPE_RAJA = 80;
+  let alkuX = null;
+  let siirtyma = 0;
+
+  function paivitaAsento() {
+    audienssiEl.style.transition = "none";
+    audienssiEl.style.transform = "translateX(" + siirtyma + "px) rotate(" + (siirtyma / 20) + "deg)";
+    audienssiEl.style.opacity = String(1 - Math.min(Math.abs(siirtyma) / 400, 0.6));
+  }
+
+  function nollaaAsento() {
+    audienssiEl.style.transition = "";
+    audienssiEl.style.transform = "";
+    audienssiEl.style.opacity = "";
+  }
+
+  audienssiEl.addEventListener("pointerdown", (e) => {
+    if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi || nykyinenAudienssi.tyhja) return;
+    // Napit hoitavat oman klikkauksensa: setPointerCapture ohjaisi pointer-tapahtumat
+    // korttiin, jolloin napin click-tapahtuma jää kokonaan syntymättä.
+    if (e.target.closest("button")) return;
+    alkuX = e.clientX;
+    audienssiEl.setPointerCapture(e.pointerId);
+  });
+
+  audienssiEl.addEventListener("pointermove", (e) => {
+    if (alkuX === null) return;
+    siirtyma = e.clientX - alkuX;
+    paivitaAsento();
+  });
+
+  function lopetaSwipe() {
+    if (alkuX === null) return;
+    const paatettySiirtyma = siirtyma;
+    alkuX = null;
+    siirtyma = 0;
+
+    if (paatettySiirtyma > SWIPE_RAJA) {
+      ratkaiseAudienssi(true);
+    } else if (paatettySiirtyma < -SWIPE_RAJA) {
+      ratkaiseAudienssi(false);
+    } else {
+      nollaaAsento();
+    }
+  }
+
+  audienssiEl.addEventListener("pointerup", lopetaSwipe);
+  audienssiEl.addEventListener("pointercancel", lopetaSwipe);
+}
+
+// ---------------------------------------------------------------- vaiheet 4 ja 6: kassaraportti
+
+function muotoileEro(ero) {
+  return (ero >= 0 ? "+" : "−") + muotoileRaha(Math.abs(ero));
+}
+
+// Ratkaistu audienssikortti jätetään tarkoituksella näkyviin tämän vaiheen ajaksi, jotta
+// pelaaja näkee vierekkäin mitä päätti ja mitä se maksoi. Vaihe 5 piilottaa sen.
+function suoritaValikassaraportti(vaikutus, mika) {
+  const osat = [];
+  if (vaikutus.ennen.kassa !== vaikutus.jalkeen.kassa) {
+    osat.push("kassa " + muotoileEro(vaikutus.jalkeen.kassa - vaikutus.ennen.kassa)
+      + " → " + muotoileRaha(vaikutus.jalkeen.kassa));
+  }
+  if (vaikutus.ennen.kuukausikulut !== vaikutus.jalkeen.kuukausikulut) {
+    osat.push("kuukausikulut " + muotoileEro(vaikutus.jalkeen.kuukausikulut - vaikutus.ennen.kuukausikulut)
+      + " → " + muotoileRaha(vaikutus.jalkeen.kuukausikulut) + "/kk");
+  }
+
+  let teksti = mika + " jälkeen: " + osat.join(", ") + ".";
+  if (pelitila.kassakriisi) {
+    teksti += " KASSAKRIISI — rahalliset toiminnot lukossa.";
+  }
+  piirraKassavaihe(teksti);
+}
+
+// ---------------------------------------------------------------- vaihe 5: presidentin päätös
+
+function suoritaPaatosvaihe() {
+  piirraKassavaihe(null);
+  piirraAudienssi(null);
+
+  kierros.paatoksenKassaEnnen = otaKassatilanne(pelitila);
+  piirraPaatosvalinta(true);
+  odottaaValintaa = true;
+}
+
+function paataPaatosvaihe() {
+  odottaaValintaa = false;
+  kirjaaKassavaikutus(kierros, "paatoksenKassavaikutus", kierros.paatoksenKassaEnnen, pelitila);
+  piirraPaatosvalinta(false);
+  piirraKaikki();
+  jatkaKierrosta();
+}
+
+function toteutaValittuPaatos() {
+  if (!onkoVaiheessa("paatos")) return;
+
+  const valintaEl = document.getElementById("paatos-valinta");
+  const paatos = paatoskortit.find(p => p.id === valintaEl.value);
+  if (paatos) {
+    toteutaPaatos(pelitila, paatos);
+    tarkistaSotalaukaisijat(paatos);
+  }
+  paataPaatosvaihe();
+}
+
+// ---------------------------------------------------------------- vaihe 7: uutisvaihe
 
 function viestiPikasodasta(tulos) {
   return tulos.voitto
@@ -56,6 +370,14 @@ function viestiN1Tuloksesta(tulos) {
     return "Leftoton johto perääntyy! Kansa juhlii diktaattorin voimannäyttöä.";
   }
   return "Leftoton sotauhka jatkuu (kierros " + tulos.kierros + ").";
+}
+
+function suoritaUutisvaihe() {
+  piirraKassavaihe(null);
+  piirraAudienssi(null);
+  piirraPaatosvalinta(false);
+
+  kasitteleUutinen();
 }
 
 function kasitteleUutinen() {
@@ -94,7 +416,7 @@ function kasitteleUutinen() {
 
   if (kasitteleAttentaattiTarkistus()) return;
 
-  tarkistaJaAloitaKriisi();
+  tarkistaKeskeytykset();
 }
 
 // GDD 10: attentaatti - "voimattomien keino syöstä diktaattori vallasta". Palauttaa true
@@ -117,15 +439,15 @@ function kasitteleAttentaattiTarkistus() {
   return true;
 }
 
-// GDD 9: voi laukaista missä vaiheessa tahansa - tarkistetaan käytännössä kerran per kuukausi,
-// uutisvaiheen jälkeen (viimeinen tilaa muuttava vaihe yksinkertaistetussa kuukausikierrossa).
+// ---------------------------------------------------------------- kriisit (GDD 9)
+
+// Palauttaa true jos kriisi laukesi ja otti kierroksen haltuunsa.
 function tarkistaJaAloitaKriisi() {
   const kriisi = tarkistaKriisi(pelitila);
   if (!kriisi) {
     nykyinenKriisi = null;
     piirraKriisi(null);
-    asetaSeuraavaKuukausiNappiTila();
-    return;
+    return false;
   }
 
   nykyinenKriisi = kriisi;
@@ -134,8 +456,9 @@ function tarkistaJaAloitaKriisi() {
   } else {
     nykyinenKriisi.vaihe = "uhka";
     piirraKriisi(nykyinenKriisi);
-    asetaSeuraavaKuukausiNappiTila();
+    paivitaEteneminen();
   }
+  return pelitila.peliOhi || !!nykyinenKriisi;
 }
 
 function siirryPuolustusvaiheeseen(kriisi) {
@@ -146,7 +469,7 @@ function siirryPuolustusvaiheeseen(kriisi) {
   }
   kriisi.vaihe = "puolustus";
   piirraKriisi(kriisi);
-  asetaSeuraavaKuukausiNappiTila();
+  paivitaEteneminen();
 }
 
 function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
@@ -154,7 +477,7 @@ function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
   if (tulos.voitto) {
     kriisi.vaihe = "rangaistus";
     piirraKriisi(kriisi);
-    asetaSeuraavaKuukausiNappiTila();
+    paivitaEteneminen();
   } else {
     nykyinenKriisi = null;
     piirraKriisi(null);
@@ -162,152 +485,63 @@ function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
   }
 }
 
-// GDD 1.5: swipe-mekaniikka audiensseissa (oikealle = kyllä, vasemmalle = ei).
-function alustaAudienssiSwipe() {
-  const audienssiEl = document.getElementById("audienssi");
-  const SWIPE_RAJA = 80;
-  let alkuX = null;
-  let siirtyma = 0;
-
-  function paivitaAsento() {
-    audienssiEl.style.transition = "none";
-    audienssiEl.style.transform = "translateX(" + siirtyma + "px) rotate(" + (siirtyma / 20) + "deg)";
-    audienssiEl.style.opacity = String(1 - Math.min(Math.abs(siirtyma) / 400, 0.6));
-  }
-
-  function nollaaAsento() {
-    audienssiEl.style.transition = "";
-    audienssiEl.style.transform = "";
-    audienssiEl.style.opacity = "";
-  }
-
-  audienssiEl.addEventListener("pointerdown", (e) => {
-    if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi) return;
-    alkuX = e.clientX;
-    audienssiEl.setPointerCapture(e.pointerId);
-  });
-
-  audienssiEl.addEventListener("pointermove", (e) => {
-    if (alkuX === null) return;
-    siirtyma = e.clientX - alkuX;
-    paivitaAsento();
-  });
-
-  function lopetaSwipe() {
-    if (alkuX === null) return;
-    const paatettySiirtyma = siirtyma;
-    alkuX = null;
-    siirtyma = 0;
-
-    if (paatettySiirtyma > SWIPE_RAJA) {
-      ratkaiseAudienssi(true);
-    } else if (paatettySiirtyma < -SWIPE_RAJA) {
-      ratkaiseAudienssi(false);
-    } else {
-      nollaaAsento();
-    }
-  }
-
-  audienssiEl.addEventListener("pointerup", lopetaSwipe);
-  audienssiEl.addEventListener("pointercancel", lopetaSwipe);
-}
-
-function aloitaAudienssi() {
-  const tulos = valitseAudienssi(pelitila, audienssikortit, heitaD3);
-
-  if (!tulos) {
-    nykyinenAudienssi = null;
-    piirraAudienssi(null);
-    naytaPaatosvalinta();
-  } else if (onkoPakkoEi(pelitila, tulos.kortti)) {
-    hylkaaAudienssi(pelitila, tulos.ryhmaAvain, tulos.kortti);
-    nykyinenAudienssi = { ryhmaAvain: tulos.ryhmaAvain, kortti: tulos.kortti, pakkoEi: true };
-    piirraKaikki();
-    piirraAudienssi(nykyinenAudienssi);
-    naytaPaatosvalinta();
-  } else {
-    nykyinenAudienssi = tulos;
-    piirraAudienssi(nykyinenAudienssi);
-  }
-
-  asetaSeuraavaKuukausiNappiTila();
-}
-
-function naytaPaatosvalinta() {
-  paatosOdottaa = true;
-  piirraPaatosvalinta(true);
-  asetaSeuraavaKuukausiNappiTila();
-}
-
-function suljePaatosvalinta() {
-  paatosOdottaa = false;
-  piirraPaatosvalinta(false);
-  kasitteleUutinen();
-  asetaSeuraavaKuukausiNappiTila();
-}
-
-function ratkaiseAudienssi(hyvaksytty) {
-  if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi) return;
-
-  if (hyvaksytty) {
-    hyvaksyAudienssi(pelitila, nykyinenAudienssi.kortti);
-    tarkistaSotalaukaisijat(nykyinenAudienssi.kortti);
-  } else {
-    hylkaaAudienssi(pelitila, nykyinenAudienssi.ryhmaAvain, nykyinenAudienssi.kortti);
-  }
-
-  nykyinenAudienssi = null;
+// Kriisi ratkesi voittoon - jatketaan kuukautta siitä vaiheesta johon se keskeytti.
+function paataKriisi() {
+  nykyinenKriisi = null;
   piirraKaikki();
-  piirraAudienssi(null);
-  naytaPaatosvalinta();
+  piirraKriisi(null);
+  jatkaKierrosta();
 }
 
-function toteutaValittuPaatos() {
-  const valintaEl = document.getElementById("paatos-valinta");
-  const paatos = paatoskortit.find(p => p.id === valintaEl.value);
-  if (paatos) {
-    toteutaPaatos(pelitila, paatos);
-    tarkistaSotalaukaisijat(paatos);
-    piirraKaikki();
-  }
-  suljePaatosvalinta();
-}
+// ---------------------------------------------------------------- käynnistys
 
 document.addEventListener("DOMContentLoaded", () => {
   pelitila.audienssipakat = luoAudienssipakat(audienssikortit);
   pelitila.uutispakka = luoUutispakka(uutiskortit);
 
   piirraKaikki();
-  piirraAudienssi(null);
-  piirraPaatosvalinta(false);
-  piirraUutinen(null);
-  piirraAttentaatti(null);
+  piirraVaihe(null);
+  tyhjennaKuukaudenPaneelit();
   piirraKriisi(null);
   piirraPeliOhi(null);
+  paivitaEteneminen();
 
   alustaAudienssiSwipe();
 
   document.getElementById("seuraava-kuukausi-nappi").addEventListener("click", () => {
     if (pelitila.peliOhi) return;
-    pelitila.kuukausi += 1;
-    kasitteleSotaVelka(pelitila);
-    kasitteleVallankumousvoimanPalautuminen(pelitila);
-    // GDD 12: REV STR on "vaan rapsa" (Sasu, elokuu 2026) - pelaajalle näytettävä varoituslukema,
-    // ei osa taistelulaskentaa. Seuraa kriisikykyisten ryhmien tyytymättömyyttä paitsi kun
-    // sodanjälkeinen piikki+palautuminen on kesken (silloin se ohittaa perustason väliaikaisesti).
-    if (pelitila.vallankumousvoimaPalautusJaljella <= 0) {
-      pelitila.vallankumousvoima = laskeVallankumousvoimanPerustaso(pelitila);
+    if (kierros === null) {
+      aloitaUusiKuukausi();
+    } else {
+      siirraSeuraavaanVaiheeseen();
     }
-    kasitteleKassaraportti(pelitila);
-    piirraKaikki();
-    aloitaAudienssi();
   });
 
   document.getElementById("hyvaksy-nappi").addEventListener("click", () => ratkaiseAudienssi(true));
   document.getElementById("hylkaa-nappi").addEventListener("click", () => ratkaiseAudienssi(false));
 
   document.getElementById("paatos-toteuta-nappi").addEventListener("click", toteutaValittuPaatos);
-  document.getElementById("paatos-ohita-nappi").addEventListener("click", suljePaatosvalinta);
+  document.getElementById("paatos-ohita-nappi").addEventListener("click", () => {
+    if (!onkoVaiheessa("paatos")) return;
+    paataPaatosvaihe();
+  });
+
+  document.getElementById("poliisiraportti-osta-nappi").addEventListener("click", () => {
+    if (!onkoVaiheessa("poliisiraportti1", "poliisiraportti2")) return;
+    const raportti = ostaPoliisiraportti(pelitila);
+    if (!raportti) return;
+    odottaaValintaa = false;
+    piirraKaikki();
+    piirraPoliisiraportti({ saatavuus: poliisiraportinSaatavuus(pelitila), raportti });
+    paivitaEteneminen();
+  });
+
+  document.getElementById("poliisiraportti-ohita-nappi").addEventListener("click", () => {
+    if (!onkoVaiheessa("poliisiraportti1", "poliisiraportti2")) return;
+    odottaaValintaa = false;
+    piirraPoliisiraportti(null);
+    siirraSeuraavaanVaiheeseen();
+  });
 
   document.getElementById("kriisi-neuvottele-nappi").addEventListener("click", () => {
     if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "uhka") return;
@@ -328,10 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("kriisi-hyvaksy-nappi").addEventListener("click", () => {
     if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "vaatimus") return;
     hyvaksyVaatimus(pelitila, nykyinenKriisi.vaatimuskortti);
-    nykyinenKriisi = null;
-    piirraKaikki();
-    piirraKriisi(null);
-    asetaSeuraavaKuukausiNappiTila();
+    paataKriisi();
   });
 
   document.getElementById("kriisi-hylkaa-nappi").addEventListener("click", () => {
@@ -360,18 +591,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("kriisi-rankaise-nappi").addEventListener("click", () => {
     if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "rangaistus") return;
     rankaiseKapinalliset(pelitila, nykyinenKriisi);
-    nykyinenKriisi = null;
-    piirraKaikki();
-    piirraKriisi(null);
-    asetaSeuraavaKuukausiNappiTila();
+    paataKriisi();
   });
 
   document.getElementById("kriisi-armahda-nappi").addEventListener("click", () => {
     if (!nykyinenKriisi || nykyinenKriisi.vaihe !== "rangaistus") return;
     armahdaKapinalliset(pelitila, nykyinenKriisi);
-    nykyinenKriisi = null;
-    piirraKaikki();
-    piirraKriisi(null);
-    asetaSeuraavaKuukausiNappiTila();
+    paataKriisi();
   });
 });

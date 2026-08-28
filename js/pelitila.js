@@ -37,6 +37,9 @@ const pelitila = {
   vallankumousvoimaPalautusKesto: 0,
   vallankumousvoimaAlkuperainenPiikki: 0,
 
+  // GDD 12: ensimmäinen poliisiraportti on ilmainen, sen jälkeen 1 000/kpl.
+  poliisiraporttiOstettu: false,
+
   // GDD 3.5/11: pako.
   helikopteriOstettu: false,
 

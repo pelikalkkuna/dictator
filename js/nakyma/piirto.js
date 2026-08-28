@@ -14,6 +14,83 @@ function piirraKassaraportti() {
   laatikkoEl.classList.toggle("kriisi", pelitila.kassakriisi);
 }
 
+// GDD 4: vaihe vaiheelta -navigointi - pelaajalle näytetään missä kohtaa kuukautta ollaan.
+function piirraVaihe(vaihe) {
+  const vaiheEl = document.getElementById("vaihe-teksti");
+
+  if (!vaihe) {
+    vaiheEl.classList.add("piilossa");
+    return;
+  }
+  vaiheEl.classList.remove("piilossa");
+  vaiheEl.textContent = "Vaihe " + vaihe.numero + "/8 — " + vaihe.nimi;
+}
+
+// GDD 4 vaiheet 1, 4 ja 6. Vaihe 1 näyttää kuukauden avauksen, vaiheet 4 ja 6 kertovat
+// mitä juuri tehty audienssi tai päätös teki kassalle.
+function piirraKassavaihe(teksti) {
+  const kassavaiheEl = document.getElementById("kassavaihe");
+
+  if (!teksti) {
+    kassavaiheEl.classList.add("piilossa");
+    return;
+  }
+  kassavaiheEl.classList.remove("piilossa");
+  document.getElementById("kassavaihe-teksti").textContent = teksti;
+}
+
+// GDD 12. Kolme tilaa: ostotarjous (napit), ostettu raportti (sisältö) tai piilossa.
+function piirraPoliisiraportti(tila) {
+  const paneeliEl = document.getElementById("poliisiraportti");
+  const napitEl = document.getElementById("poliisiraportti-napit");
+  const sisaltoEl = document.getElementById("poliisiraportti-sisalto");
+
+  if (!tila) {
+    paneeliEl.classList.add("piilossa");
+    return;
+  }
+  paneeliEl.classList.remove("piilossa");
+  napitEl.classList.add("piilossa");
+  sisaltoEl.classList.add("piilossa");
+
+  const tekstiEl = document.getElementById("poliisiraportti-teksti");
+
+  if (tila.raportti) {
+    tekstiEl.textContent = "Salaisen poliisin tiedustelu:";
+    sisaltoEl.classList.remove("piilossa");
+
+    const listaEl = document.getElementById("poliisiraportti-lista");
+    listaEl.innerHTML = "";
+    for (const rivi of tila.raportti.rivit) {
+      const li = document.createElement("li");
+      li.textContent = rivi.nimi + " — suosio " + rivi.suosio + ", voima " + rivi.voima;
+      if (rivi.merkki) {
+        li.appendChild(document.createTextNode(" "));
+        const merkkiEl = document.createElement("span");
+        merkkiEl.className = "poliisiraportti-merkki";
+        merkkiEl.textContent = rivi.merkki;
+        li.appendChild(merkkiEl);
+      }
+      listaEl.appendChild(li);
+    }
+
+    document.getElementById("poliisiraportti-voimat").textContent =
+      "Oma voima (henkivartijat): " + tila.raportti.omaVoima
+      + " — Vallankumousvoima: " + Math.round(tila.raportti.vallankumousvoima);
+    return;
+  }
+
+  if (!tila.saatavuus.saatavilla) {
+    tekstiEl.textContent = tila.saatavuus.syy;
+    return;
+  }
+
+  tekstiEl.textContent = tila.saatavuus.ilmainen
+    ? "Ensimmäinen raportti on ilmainen. Ostatko sen?"
+    : "Raportti maksaa " + muotoileRaha(tila.saatavuus.hinta) + ". Ostatko sen?";
+  napitEl.classList.remove("piilossa");
+}
+
 function piirraRyhmat() {
   const listaEl = document.getElementById("ryhmat-lista");
   listaEl.innerHTML = "";
@@ -40,10 +117,24 @@ function piirraAudienssi(nykyinenAudienssi) {
   }
 
   audienssiEl.classList.remove("piilossa");
+
+  // GDD 4.1: kaikkien kolmen ryhmän pakat tyhjät — audienssia ei pidetä tässä kuussa.
+  if (nykyinenAudienssi.tyhja) {
+    tekstiEl.textContent = "Yksikään ryhmä ei pyydä audienssia tässä kuussa.";
+    napitEl.style.display = "none";
+    vihjeEl.style.display = "none";
+    return;
+  }
+
   const esittajanNimi = pelitila.ryhmat[nykyinenAudienssi.ryhmaAvain].nimi;
 
   if (nykyinenAudienssi.pakkoEi) {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus + " — PAKKO-EI (kassakriisi estää rahallisen vaatimuksen)";
+    napitEl.style.display = "none";
+    vihjeEl.style.display = "none";
+  } else if (nykyinenAudienssi.ratkaistu) {
+    tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus
+      + " — " + (nykyinenAudienssi.hyvaksytty ? "HYVÄKSYTTY" : "HYLÄTTY");
     napitEl.style.display = "none";
     vihjeEl.style.display = "none";
   } else {
