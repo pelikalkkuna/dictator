@@ -33,7 +33,13 @@ const uutiskortit = {
       erikoinen: "N1_SOTAUHKA" },
     { id: "N2", tapahtuma: "Kuubalaiset aseistivat sissit", toistuva: false,
       erikoinen: "N2_SISSIT_MAX" },
+    // Sasu (pelitestaus elokuu 2026): yllätyshyökkäys realisoituu vain jos välit naapuriin ovat
+    // huonot — "Äksen oli 9 suosio niin ei sitä ny silloin hyökätä vaikka kortti tulee".
+    // Ehto ei kuluta korttia: se jää pakkaan ja voi tulla myöhemmin kun suhteet ovat kylmenneet.
+    // HUOM: koskee vain tätä satunnaista nostoa. A1:n pikasota ja P1/D16:n eskalaatio ovat
+    // pelaajan omia tekoja eivätkä käy tätä kautta, joten ne toimivat suosiosta riippumatta.
     { id: "N3", tapahtuma: "Leftoto hyökkää!", toistuva: false,
+      ehto: pelitila => pelitila.ryhmat.leftoto.suosio <= 3,
       erikoinen: "N3_YLLATYSHYOKKAYS" },
     { id: "N4", tapahtuma: "Armeijan asevarasto räjähti", toistuva: false,
       erikoinen: "N4_ARMEIJA_PUOLITA" },

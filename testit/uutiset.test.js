@@ -167,3 +167,45 @@ test("nostaUutinen täyttää pakan uudelleen kun kertakäyttöiset loppuvat", (
   nostaUutinen(tila, uutiskortit, () => 0); // indeksi 0 -> täytön jälkeen ensimmäinen kortti kuluu
   assert.equal(tila.uutispakka.length, kertakayttoistenMaara - 1);
 });
+
+// Sasu (pelitestaus elokuu 2026): "Leftoto yllätyshyökkäys kortti vaatii myös 3 tai alle
+// suosion että se realisoituu." Naapuri joka pitää sinusta ei hyökkää.
+test("N3:n yllätyshyökkäys vaatii Leftoton suosioksi enintään 3", () => {
+  const n3 = etsiUutinen(uutiskortit, "N3");
+  assert.equal(typeof n3.ehto, "function");
+
+  const tila = uusiTila();
+  tila.ryhmat.leftoto.suosio = 3;
+  assert.equal(n3.ehto(tila), true);
+  tila.ryhmat.leftoto.suosio = 4;
+  assert.equal(n3.ehto(tila), false);
+});
+
+test("hyvien välien vallitessa N3 ei nouse eikä kulu pakasta", () => {
+  const tila = uusiTila(); // leftoto.suosio = 7
+  const n3Indeksi = tila.uutispakka.indexOf("N3");
+  const pooli = tila.uutispakka.length + 7; // 41 kertakäyttöistä + 7 toistuvaa
+
+  // Ensimmäinen heitto osuu N3:een (ehto ei täyty), toinen pakan ensimmäiseen korttiin.
+  let kutsu = 0;
+  const heittoFn = () => {
+    kutsu += 1;
+    return kutsu === 1 ? (n3Indeksi + 0.5) / pooli : 0;
+  };
+
+  const kortti = nostaUutinen(tila, uutiskortit, heittoFn);
+  assert.notEqual(kortti.id, "N3");
+  assert.ok(tila.uutispakka.includes("N3"), "N3 jää pakkaan odottamaan huonompia välejä");
+});
+
+test("välien kylmettyä N3 nousee normaalisti ja kuluu pakasta", () => {
+  const tila = uusiTila();
+  tila.ryhmat.leftoto.suosio = 2;
+  const n3Indeksi = tila.uutispakka.indexOf("N3");
+  const pooli = tila.uutispakka.length + 7;
+
+  const kortti = nostaUutinen(tila, uutiskortit, () => (n3Indeksi + 0.5) / pooli);
+  assert.equal(kortti.id, "N3");
+  assert.equal(kortti.erikoinen, "N3_YLLATYSHYOKKAYS");
+  assert.ok(!tila.uutispakka.includes("N3"), "kertakäyttöinen kortti kuluu kun se nousee");
+});

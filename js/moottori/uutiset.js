@@ -41,8 +41,15 @@ function nostaUutinen(pelitila, uutiskortit, satunnaisFn) {
     const indeksi = Math.floor(heitto() * pakanKoko);
 
     if (indeksi < pelitila.uutispakka.length) {
-      const korttiId = pelitila.uutispakka.splice(indeksi, 1)[0];
-      return etsiUutinen(uutiskortit, korttiId);
+      const kortti = etsiUutinen(uutiskortit, pelitila.uutispakka[indeksi]);
+      // Ehto koskee myös kertakäyttöisiä kortteja (esim. N3:n yllätyshyökkäys): jos ehto ei
+      // täyty, kortti jätetään pakkaan kulumatta ja nostetaan uudelleen. Ilman tätä ehto
+      // olisi voimassa vain toistuvilla korteilla.
+      if (kortti.ehto && !kortti.ehto(pelitila)) {
+        continue;
+      }
+      pelitila.uutispakka.splice(indeksi, 1);
+      return kortti;
     }
 
     const kortti = toistuvat[indeksi - pelitila.uutispakka.length];
