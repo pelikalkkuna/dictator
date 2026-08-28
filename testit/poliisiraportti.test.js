@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   POLIISIRAPORTTI_HINTA,
+  NAKYVYYSKYNNYS,
+  palautaSalaisenPoliisinSuosio,
   uhkaindikaattori,
   poliisiraportinSaatavuus,
   luoPoliisiraportti,
@@ -137,6 +139,54 @@ test("salainen poliisi voi saada A-merkin muttei numeromerkkiä", () => {
   tila2.ryhmat.salainenPoliisi.suosio = 3;
   tila2.ryhmat.salainenPoliisi.voima = 9; // tyytymättömyys 6, mutta ei kriisikykyinen
   assert.equal(uhkaindikaattori(tila2, "salainenPoliisi"), null);
+});
+
+test("salaisen poliisin suosio palautuu +1/kk kunnes raportti on taas saatavilla", () => {
+  const tila = uusiTila({ poliisiraporttiOstettu: true });
+  tila.ryhmat.salainenPoliisi.suosio = 0;
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, false);
+
+  // Nollasta kolmeen kuukauteen: "rapsa tulee näkyviin muutaman vuoron jälkeen".
+  assert.equal(palautaSalaisenPoliisinSuosio(tila), true);
+  assert.equal(tila.ryhmat.salainenPoliisi.suosio, 1);
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, false);
+
+  palautaSalaisenPoliisinSuosio(tila);
+  assert.equal(tila.ryhmat.salainenPoliisi.suosio, 2);
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, false);
+
+  palautaSalaisenPoliisinSuosio(tila);
+  assert.equal(tila.ryhmat.salainenPoliisi.suosio, NAKYVYYSKYNNYS);
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, true);
+});
+
+test("palautuminen pysähtyy näkyvyyskynnykseen eikä nosta suosiota sen yli", () => {
+  const tila = uusiTila();
+  tila.ryhmat.salainenPoliisi.suosio = NAKYVYYSKYNNYS;
+  assert.equal(palautaSalaisenPoliisinSuosio(tila), false);
+  assert.equal(tila.ryhmat.salainenPoliisi.suosio, NAKYVYYSKYNNYS);
+
+  tila.ryhmat.salainenPoliisi.suosio = 7;
+  assert.equal(palautaSalaisenPoliisinSuosio(tila), false);
+  assert.equal(tila.ryhmat.salainenPoliisi.suosio, 7);
+});
+
+test("palautuminen ei koske voimaa - D9:n lakkautus pitää raportin lukossa (GDD 13)", () => {
+  const tila = uusiTila({ poliisiraporttiOstettu: true });
+  tila.ryhmat.salainenPoliisi.suosio = 0;
+  tila.ryhmat.salainenPoliisi.voima = 0; // D9 lakkauttaa: 0/0
+
+  for (let kk = 0; kk < 10; kk++) palautaSalaisenPoliisinSuosio(tila);
+
+  assert.equal(tila.ryhmat.salainenPoliisi.voima, 0);
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, false);
+});
+
+test("toipunut poliisi ei silti anna raporttia jos kassa on tyhjä", () => {
+  const tila = uusiTila({ poliisiraporttiOstettu: true, kassakriisi: true, kassa: 0 });
+  tila.ryhmat.salainenPoliisi.suosio = NAKYVYYSKYNNYS;
+  assert.equal(poliisiraportinSaatavuus(tila).saatavilla, false);
+  assert.equal(poliisiraportinSaatavuus(tila).syy, "Kassa ei riitä raportin ostoon.");
 });
 
 test("ostettu raportti merkitsee lipun eikä toinen osto ole enää ilmainen", () => {

@@ -91,13 +91,16 @@ function piirraPoliisiraportti(tila) {
   napitEl.classList.remove("piilossa");
 }
 
+// GDD 9.5 / 12 (Sasu, elokuu 2026): "Tilannekuvan saa ostaa salaisen poliisin raportissa."
+// Yläpalkki listaa ryhmät nimeltä muttei paljasta suosiota eikä voimaa - muuten raportin
+// ostamisesta ei olisi hyötyä eikä puolustusvalinnassa olisi jännitettä ("pelaaja valitsee
+// MUISTINSA varassa", "jos säästit nuo tuhannet, taistelet sokkona").
 function piirraRyhmat() {
   const listaEl = document.getElementById("ryhmat-lista");
   listaEl.innerHTML = "";
   for (const avain in pelitila.ryhmat) {
-    const ryhma = pelitila.ryhmat[avain];
     const rivi = document.createElement("li");
-    rivi.textContent = ryhma.nimi + " — suosio " + ryhma.suosio + ", voima " + ryhma.voima;
+    rivi.textContent = pelitila.ryhmat[avain].nimi;
     listaEl.appendChild(rivi);
   }
 }

@@ -23,6 +23,9 @@ if (typeof module !== "undefined") {
 
 const POLIISIRAPORTTI_HINTA = 1000;
 
+// GDD 12: "Ei saatavilla kun salaisen poliisin suosio <= 2" eli suosio < 3.
+const NAKYVYYSKYNNYS = 3;
+
 // GDD 2.4: uhkaindikaattorit näytetään vain ryhmille jotka oikeasti voivat toimia uhkana.
 // Kriisin voi käynnistää vain armeija/talonpojat/maanomistajat (GDD 9.1), ja attentaatin
 // vain kotimaan tyyppiset ryhmät (GDD 10, ks. attentaatti.js:n A_RYHMAT).
@@ -56,7 +59,7 @@ function poliisiraportinSaatavuus(pelitila) {
   const ilmainen = !pelitila.poliisiraporttiOstettu;
   const hinta = ilmainen ? 0 : POLIISIRAPORTTI_HINTA;
 
-  if (poliisi.suosio <= 2) {
+  if (poliisi.suosio < NAKYVYYSKYNNYS) {
     return { saatavilla: false, hinta, ilmainen, syy: "Salainen poliisi ei enää palvele sinua." };
   }
   if (poliisi.voima === 0) {
@@ -90,6 +93,22 @@ function luoPoliisiraportti(pelitila) {
   };
 }
 
+// Sasu (elokuu 2026): raportin sammuminen salaisen poliisin suosion romahdettua ei ole pysyvä
+// - "suosio palautuu hiljalleen ja rapsa tulee näkyviin muutaman vuoron jälkeen". Palautuu
+// +1/kk VAIN niin kauan kuin suosio on näkyvyyskynnyksen alapuolella, eli täsmälleen sen verran
+// että raportti palaa saataville (0 -> 3 kestää kolme kuukautta). Ei siis ilmainen tie takaisin
+// salaisen poliisin suosioon, vain ulos sokeudesta.
+//
+// HUOM: palautus koskee vain suosiota, ei voimaa. Siksi GDD 13:n D9/D10-strategia toimii yhä:
+// D9 (lakkauta) nollaa myös voiman, ja voima = 0 pitää raportin lukossa kunnes D10 vahvistaa
+// poliisin takaisin. Lakkautettu poliisi ei siis näe mitään pelkän ajan kulumisen ansiosta.
+function palautaSalaisenPoliisinSuosio(pelitila) {
+  const poliisi = pelitila.ryhmat.salainenPoliisi;
+  if (poliisi.suosio >= NAKYVYYSKYNNYS) return false;
+  poliisi.suosio += 1;
+  return true;
+}
+
 // Veloittaa hinnan ja palauttaa raportin. Palauttaa null jos raportti ei ole saatavilla.
 function ostaPoliisiraportti(pelitila) {
   const saatavuus = poliisiraportinSaatavuus(pelitila);
@@ -104,6 +123,8 @@ function ostaPoliisiraportti(pelitila) {
 if (typeof module !== "undefined") {
   module.exports = {
     POLIISIRAPORTTI_HINTA,
+    NAKYVYYSKYNNYS,
+    palautaSalaisenPoliisinSuosio,
     uhkaindikaattori,
     poliisiraportinSaatavuus,
     luoPoliisiraportti,

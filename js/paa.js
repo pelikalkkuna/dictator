@@ -149,6 +149,10 @@ function jatkaKierrosta() {
 function suoritaKuukaudenAvaus() {
   const velkaaEnnen = pelitila.sotaVelkaKuukausiaJaljella;
 
+  // Salaisen poliisin suosio palautuu hiljalleen näkyvyyskynnykseen asti, jotta raportin
+  // sammuminen on väliaikainen sokeus eikä pelin loppuun kestävä (Sasu, elokuu 2026).
+  const poliisiToipui = palautaSalaisenPoliisinSuosio(pelitila);
+
   kasitteleSotaVelka(pelitila);
   kasitteleVallankumousvoimanPalautuminen(pelitila);
   // GDD 12: REV STR on "vaan rapsa" (Sasu, elokuu 2026) - pelaajalle näytettävä varoituslukema,
@@ -164,6 +168,9 @@ function suoritaKuukaudenAvaus() {
     + "Kassa: " + muotoileRaha(pelitila.kassa) + ".";
   if (velkaaEnnen > 0) {
     teksti += " Sodan jälkilasku: kotimaan ryhmien suosio −1 (" + velkaaEnnen + " kk jäljellä).";
+  }
+  if (poliisiToipui) {
+    teksti += " Salainen poliisi toipuu hitaasti epäsuosiostaan.";
   }
   if (pelitila.kassakriisi) {
     teksti += " KASSAKRIISI — rahalliset toiminnot lukossa.";
