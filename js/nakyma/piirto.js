@@ -131,18 +131,6 @@ function vieritaNakyviin(elementtiId) {
 
 // ---------------------------------------------------------------- poliisiraportti
 
-// Poliisiraportti on ainoa vaihe joka esiintyy kuukaudessa kahdesti (vaiheet 2 ja 6), mutta
-// paneeleita on vain yksi. Koska paneelit jäävät näkyviin kuun loppuun, vaiheen 6 raportti
-// piirtyisi muuten kuukauden ALKUUN uutisten yläpuolelle - pelaaja jää sivun pohjalle
-// tuijottamaan lukossa olevaa "Jatka"-nappia eikä näe ainoaa toimivaa nappia lainkaan.
-// Löytyi pelitestissä (Sasu, elokuu 2026): "KK vaihto ei toimi, jatka napissa ongelma".
-function siirraPoliisiraporttiVaiheeseen(loppuun) {
-  const peli = document.getElementById("peli");
-  const paneeli = document.getElementById("poliisiraportti");
-  const kohta = document.getElementById(loppuun ? "peli-ohi" : "audienssi");
-  peli.insertBefore(paneeli, kohta);
-}
-
 // GDD 12. Kolme tilaa: ostotarjous (napit), ostettu raportti (sisältö) tai piilossa.
 function piirraPoliisiraportti(tila) {
   const paneeliEl = document.getElementById("poliisiraportti");

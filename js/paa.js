@@ -144,9 +144,8 @@ async function suoritaVaihe(vaihe) {
     case "kassaraportti":
       suoritaKuukaudenAvaus();
       break;
-    case "poliisiraportti1":
-    case "poliisiraportti2":
-      suoritaPoliisiraporttivaihe(vaihe.avain === "poliisiraportti2");
+    case "poliisiraportti":
+      suoritaPoliisiraporttivaihe();
       break;
     case "audienssi":
       suoritaAudienssivaihe();
@@ -166,11 +165,10 @@ async function suoritaVaihe(vaihe) {
 // Mihin paneeliin kunkin vaiheen huomio kuuluu, jotta uusi vaihe tuodaan näkyviin.
 const VAIHEEN_PANEELI = {
   kassaraportti: "kassavaihe",
-  poliisiraportti1: "poliisiraportti",
-  poliisiraportti2: "poliisiraportti",
   audienssi: "audienssi",
   paatos: "paatos",
-  uutiset: "uutinen"
+  uutiset: "uutinen",
+  poliisiraportti: "poliisiraportti"
 };
 
 // GDD 4: "ATTENTAATTI ja VALLANKUMOUS / KAAPPAUS / KAPINA voivat laueta missä vaiheessa
@@ -231,24 +229,18 @@ function suoritaKuukaudenAvaus() {
   piirraKassavaihe(teksti);
 }
 
-// ---------------------------------------------------------------- vaiheet 2 ja 6: poliisiraportti
+// ---------------------------------------------------------------- vaihe 5: poliisiraportti
 
-function suoritaPoliisiraporttivaihe(kuunLopussa) {
-  siirraPoliisiraporttiVaiheeseen(kuunLopussa);
-
+function suoritaPoliisiraporttivaihe() {
   const saatavuus = poliisiraportinSaatavuus(pelitila);
   piirraPoliisiraportti({ saatavuus, raportti: null });
   // Kun raportti ei ole saatavilla, pelaajalla ei ole valintaa - näytetään vain syy.
   odottaaValintaa = saatavuus.saatavilla;
 }
 
-// ---------------------------------------------------------------- vaihe 3: audienssi
+// ---------------------------------------------------------------- vaihe 2: audienssi
 
 function suoritaAudienssivaihe() {
-  // Poliisiraportti on kertaluonteinen tilannekuva: se katoaa kun vaihe vaihtuu, jotta
-  // puolustusvalinta tehdään muistin varassa (GDD 9.5).
-  piirraPoliisiraportti(null);
-
   const tulos = valitseAudienssi(pelitila, audienssikortit, heitaD3);
 
   // GDD 4.1: jos kaikkien kolmen ryhmän pakat ovat tyhjät, audienssia ei pidetä tässä kuussa.
@@ -348,7 +340,7 @@ function alustaAudienssiSwipe() {
   audienssiEl.addEventListener("pointercancel", lopetaSwipe);
 }
 
-// ---------------------------------------------------------------- vaihe 4: presidentin päätös
+// ---------------------------------------------------------------- vaihe 3: presidentin päätös
 
 function suoritaPaatosvaihe() {
   piirraPaatosvalinta(true);
@@ -438,7 +430,7 @@ async function toteutaValittuPaatos() {
   paataPaatosvaihe();
 }
 
-// ---------------------------------------------------------------- vaihe 5: uutisvaihe
+// ---------------------------------------------------------------- vaihe 4: uutisvaihe
 
 function viestiSodasta(tulos, johdanto) {
   return tulos.voitto
@@ -654,7 +646,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("poliisiraportti-osta-nappi").addEventListener("click", () => {
-    if (!onkoVaiheessa("poliisiraportti1", "poliisiraportti2")) return;
+    if (!onkoVaiheessa("poliisiraportti")) return;
     const raportti = ostaPoliisiraportti(pelitila);
     if (!raportti) return;
     odottaaValintaa = false;
@@ -664,7 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("poliisiraportti-ohita-nappi").addEventListener("click", () => {
-    if (!onkoVaiheessa("poliisiraportti1", "poliisiraportti2")) return;
+    if (!onkoVaiheessa("poliisiraportti")) return;
     odottaaValintaa = false;
     piirraPoliisiraportti(null);
     siirraSeuraavaanVaiheeseen();
