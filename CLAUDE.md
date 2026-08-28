@@ -39,11 +39,14 @@ Sasu generoi kuvat Geminillä (premium-tili). **Sovitut koot: korttitapahtumat 1
 
 ## Julkaisu (GitHub Pages, elokuu 2026)
 
-Peli julkaistaan osoitteeseen **https://pelikalkkuna.github.io/dictator/** GitHub Actionsilla (`.github/workflows/pages.yml`). Repo on julkinen, joten Pages on ilmainen.
+Peli julkaistaan osoitteeseen **https://pelikalkkuna.github.io/dictator/** GitHub Actionsilla (`.github/workflows/pages.yml`). Repo on julkinen, joten Pages on ilmainen. Putki on todettu toimivaksi elokuussa 2026 (ajo 3: testit, kokoaminen, upload ja deploy kaikki vihreinä).
+
+**HUOM tarkistuksesta:** Claude ei pääse tästä ajoympäristöstä osoitteeseen `github.io` (proxy estää, curl palauttaa HTTP 000), joten julkaistun sivuston toimivuutta ei voi varmistaa selaimella täältä. Julkaisun onnistuminen todennetaan Actions-ajon vaiheista, ja itse peli testataan paikallisesti palvelemalla koottu sivusto alihakemistosta `/dictator/`.
 
 - **Testit ajetaan ennen julkaisua.** Jos `node --test testit/*.test.js` hajoaa, sivustoa ei julkaista. Rikkinäinen sääntömuutos ei siis päädy tuotantoon.
 - **Julkaistaan vain se mitä peli tarvitsee:** `index.html`, `css/`, `js/`, `kuvat/` ja `jakokuva.jpg`. GDD, testit, työkalut ja `materiaali/` jäävät pois (25 tiedostoa, ~464 kt ilman tapahtumakuvia).
 - **Kaikki polut ovat suhteellisia**, joten peli toimii alihakemistossa `/dictator/` ilman muutoksia. Tämä on testattu selaimessa palvelemalla koottu sivusto alihakemistosta.
+- **Yhdistäminen mainiin: Claude tekee sen automaattisesti (Sasu, elokuu 2026: "Ala tekemään yhdistämisiä automaattisesti, aina kun on tarpeen").** Kehitys tapahtuu kehityshaarassa `claude/dictator-game-plan-96ajrh`; kun kokonaisuus on valmis ja testit vihreinä, se yhdistetään mainiin ilman erillistä kysymistä, jolloin julkaisu lähtee. Tee siivoukset (esim. workflow-muutokset) kehityshaaraan ENNEN yhdistämistä, jotta yhdistäminen pysyy fast-forwardina eivätkä haarat lähde eriämään.
 - **Julkaistaan vain `main`-haarasta.** GitHub luo Pagesin käyttöönotossa `github-pages`-ympäristön, joka sallii julkaisun oletusarvoisesti vain oletushaarasta: kehityshaarasta ajettuna julkaisutyö torjutaan sekunnissa ilman että yhtäkään vaihetta ajetaan (ei ajuria, ei lokia — tämä on ympäristön haararajoituksen tuntomerkki). Kehitys tapahtuu edelleen kehityshaarassa, mutta muutokset menevät tuotantoon vasta yhdistämisen jälkeen.
 - **Pages on kytkettävä päälle kerran käsin:** Settings → Pages → Source: **GitHub Actions**. Tätä ei voi automatisoida workflow'sta — kokeiltu `enablement: true`, mutta workflow'n oma GITHUB_TOKEN ei saa luoda Pages-sivustoa (`Create Pages site failed: Resource not accessible by integration`). Kun sivusto on kerran luotu, julkaisu toimii automaattisesti joka pushilla.
 - **Linkin esikatselu:** `jakokuva.jpg` (1200 × 630, pakattu `materiaali/kuvat/mainos.jpeg`:stä) ja Open Graph -metatiedot `index.html`:ssä. Favicon on SVG-data-URI samassa tiedostossa, joten ylimääräistä pyyntöä tai 404:ää ei tule.
