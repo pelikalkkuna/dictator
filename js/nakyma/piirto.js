@@ -186,8 +186,13 @@ function piirraAudienssi(nykyinenAudienssi) {
 
   if (!nykyinenAudienssi) {
     audienssiEl.classList.add("piilossa");
+    piirraKuva("audienssi-kuva", "audienssit", null);
     return;
   }
+
+  piirraKuva("audienssi-kuva", "audienssit",
+    nykyinenAudienssi.kortti ? nykyinenAudienssi.kortti.id : null, "kortti",
+    nykyinenAudienssi.kortti ? nykyinenAudienssi.kortti.vaatimus : "");
 
   audienssiEl.classList.remove("piilossa");
 
@@ -227,6 +232,7 @@ function piirraPaatosvalinta(naytetaanko) {
   if (!naytetaanko) {
     paatosEl.classList.add("piilossa");
     piirraVaikutukset("paatos-vaikutukset", null);
+    piirraKuva("paatos-kuva", "paatokset", null);
     return;
   }
   paatosEl.classList.remove("piilossa");
@@ -243,12 +249,15 @@ function piirraPaatosvalinta(naytetaanko) {
   }
 
   document.getElementById("paatos-toteuta-nappi").disabled = kaytettavissa.length === 0;
-  // Päätöksen vaikutukset näkyvät suoraan, koska valikosta selaillaan vaihtoehtoja.
-  if (kaytettavissa.length > 0) {
-    piirraVaikutukset("paatos-vaikutukset", kaytettavissa[0]);
-  } else {
-    piirraVaikutukset("paatos-vaikutukset", null);
-  }
+  // Päätöksen vaikutukset ja kuva näkyvät suoraan, koska valikosta selaillaan vaihtoehtoja.
+  piirraPaatoksenEsikatselu(kaytettavissa.length > 0 ? kaytettavissa[0] : null);
+}
+
+// Päivitetään kun valikosta valitaan toinen päätös.
+function piirraPaatoksenEsikatselu(paatos) {
+  piirraVaikutukset("paatos-vaikutukset", paatos);
+  piirraKuva("paatos-kuva", "paatokset", paatos ? paatos.id : null, "kortti",
+    paatos ? paatos.paatos : "");
 }
 
 // Sasu (pelitestaus): päätöksestä ei aiemmin kerrottu mitään - Venäjän laina saattoi tuottaa
@@ -274,10 +283,12 @@ function piirraSekvenssi(tila) {
 
   if (!tila) {
     el.classList.add("piilossa");
+    piirraKuva("sekvenssi-kuva", "draama", null);
     return;
   }
   el.classList.remove("piilossa");
   el.classList.toggle("odotus", tila.tyyli === "odotus");
+  piirraKuva("sekvenssi-kuva", "draama", tila.kuva || null, "draama", tila.otsikko);
 
   document.getElementById("sekvenssi-otsikko").textContent = tila.otsikko;
   document.getElementById("sekvenssi-teksti").textContent = tila.teksti;
@@ -298,9 +309,12 @@ function piirraUutinen(kortti) {
 
   if (!kortti) {
     uutinenEl.classList.add("piilossa");
+    piirraKuva("uutinen-kuva", "uutiset", null);
     return;
   }
   uutinenEl.classList.remove("piilossa");
+  // Tunnus näytetään pelaajalle ei koskaan (Sasu), mutta se kelpaa kuvatiedoston nimeksi.
+  piirraKuva("uutinen-kuva", "uutiset", kortti.id || null, "kortti", kortti.tapahtuma);
   document.getElementById("uutinen-teksti").textContent = kortti.tapahtuma;
 }
 
@@ -313,9 +327,13 @@ function piirraKriisi(kriisi) {
 
   if (!kriisi) {
     kriisiEl.classList.add("piilossa");
+    piirraKuva("kriisi-kuva", "kriisit", null);
     return;
   }
   kriisiEl.classList.remove("piilossa");
+  piirraKuva("kriisi-kuva", "kriisit",
+    kriisi.vaihe === "vaatimus" && kriisi.vaatimuskortti ? kriisi.vaatimuskortti.id : null,
+    "kortti", kriisi.vaatimuskortti ? kriisi.vaatimuskortti.vaatimus : "");
 
   uhkaNapitEl.classList.add("piilossa");
   vaatimusNapitEl.classList.add("piilossa");
@@ -349,27 +367,31 @@ function piirraKriisi(kriisi) {
   }
 }
 
-function piirraAttentaatti(viesti) {
+function piirraAttentaatti(viesti, kuvatunnus) {
   const attentaattiEl = document.getElementById("attentaatti");
 
   if (!viesti) {
     attentaattiEl.classList.add("piilossa");
+    piirraKuva("attentaatti-kuva", "draama", null);
     return;
   }
   attentaattiEl.classList.remove("piilossa");
+  piirraKuva("attentaatti-kuva", "draama", kuvatunnus || null, "draama", viesti);
   document.getElementById("attentaatti-teksti").textContent = viesti;
 }
 
-function piirraPeliOhi(viesti, pisteet) {
+function piirraPeliOhi(viesti, pisteet, kuvatunnus) {
   const peliOhiEl = document.getElementById("peli-ohi");
   const pisteetEl = document.getElementById("peli-ohi-pisteet");
 
   if (!viesti) {
     peliOhiEl.classList.add("piilossa");
     pisteetEl.classList.add("piilossa");
+    piirraKuva("peli-ohi-kuva", "draama", null);
     return;
   }
   peliOhiEl.classList.remove("piilossa");
+  piirraKuva("peli-ohi-kuva", "draama", kuvatunnus || null, "draama", viesti);
   document.getElementById("peli-ohi-teksti").textContent = viesti;
 
   if (!pisteet) {

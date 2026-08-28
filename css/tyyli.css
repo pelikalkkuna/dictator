@@ -225,6 +225,51 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Tapahtumakuvat. Kuvasuhde asetetaan JS:stä (16:9 kortit, 3:2 draama) ennen latausta,
+   jotta sivu ei hyppää kun kuva ilmestyy. */
+.kuvapaikka {
+  /* border-box, jotta paikanvaraajan reunus ja padding mahtuvat kuvasuhteen sisään.
+     Muuten paikanvaraaja on muutaman pikselin korkeampi kuin oikea kuva, ja asettelu
+     hyppäisi juuri sen verran kun kuva myöhemmin ilmestyy. */
+  box-sizing: border-box;
+  margin: 0.6rem 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.kuvapaikka img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Paikanvaraaja kertoo minkä niminen tiedosto puuttuu - toimii samalla tarkistuslistana
+   kuvastoa tehdessä. Saa pois asetaPuuttuvienNaytto(false):lla. */
+.kuvapaikka.puuttuu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: 1px dashed #4d4d4d;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.02) 0 8px,
+    transparent 8px 16px
+  );
+  color: #808080;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* Tämän on oltava .puuttuu-säännön JÄLKEEN: molemmilla on sama spesifisyys, joten
+   pelkkä järjestys ratkaisee kumpi display voittaa. */
+.kuvapaikka.piilossa {
+  display: none;
+}
+
 /* Vaikutusten esikatselu: audienssikortin ja päätöksen omat luvut, ei pelin tilaa. */
 .vaikutukset {
   margin-top: 0.6rem;

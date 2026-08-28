@@ -27,6 +27,16 @@ Ensimmäinen oikea läpipeluu selaimessa. Kaikki kohdat toteutettu:
 
 **Avoin: oikeat ääniraidat.** Sasu toivoi kansallislaulua lainan odotukseen. Nykyiset äänet ovat syntetisoituja; oikeat kappaleet vaatisivat äänitiedostot ja päätöksen tekijänoikeuksista. `materiaali/aanet/`:n voittomarssi on eri tarkoitukseen (web-mainonta).
 
+## Tapahtumakuvat (elokuu 2026)
+
+Sasu generoi kuvat Geminillä (premium-tili). **Sovitut koot: korttitapahtumat 1024 × 576 (16:9), draamahetket 1024 × 683 (3:2).** Perustelu: kuvapaikka on ruudulla enintään 444 CSS-pikseliä leveä (palsta on `max-width: 480px`), joten 1024 on reilusti yli 2× retinatiheydelle. 16:9 valittiin koska kuukausi vierii alaspäin ja paneelit pinoutuvat — neliökuva veisi puolet puhelimen ruudusta per tapahtuma.
+
+- **Kuvaa ei viedä korttidataan.** Polku johdetaan kortin tunnuksesta: `kuvat/audienssit/A3.webp`, `kuvat/paatokset/D12.webp`, `kuvat/uutiset/N22.webp`, `kuvat/kriisit/C1.webp`, `kuvat/draama/sota-hyokkays.webp`. Kaikki 126 kuvaa saavat paikkansa ilman yhtäkään datamuutosta — riittää että tiedosto ilmestyy oikealla nimellä.
+- **Puuttuva kuva ei riko mitään.** `img`:n `error`-tapahtuma piirtää paikanvaraajan joka kertoo puuttuvan tiedoston nimen, eli se toimii samalla tarkistuslistana. Pois `asetaPuuttuvienNaytto(false)`:lla; paketointi tekee sen automaattisesti jakeluversiolle.
+- **Kuvasuhde varataan etukäteen** (`aspect-ratio` + `box-sizing: border-box`), joten asettelu ei hyppää kun kuva latautuu. Paikanvaraaja on tarkalleen saman korkuinen kuin oikea kuva — tämä on testattu selaimessa, ja `content-box` rikkoi sen ensin muutamalla pikselillä.
+- **`kuvat/LUETTELO.md`** on generoitu tarkistuslista (`node tyokalut/luo-kuvaluettelo.js`): jokaisen kuvan tiedostonimi ja se tapahtumateksti johon se liittyy. Aja uudelleen jos kortteja lisätään.
+- **`tyokalut/paketoi.py`** kokoaa pelin yhdeksi HTML-tiedostoksi ja upottaa olemassa olevat kuvat data-URI:eina. **Kun kuvasto on valmis (~5 Mt, base64:nä ~6,7 Mt), oikea jakelutapa on GitHub Pages erillisillä tiedostoilla ja lazy-latauksella** — paketti on siihen liian raskas puhelimelle.
+
 ## Projektin kuvaus
 
 Vuoropohjainen selviytymisstrategia, jossa pelaaja on 1960–70-lukujen latinalaisamerikkalaisen Ritimban tasavallan diktaattori. Pohjautuu Don Priestleyn ja Andy Frenchin peliin (DKTronics, 1983 — Commodore 64 / ZX Spectrum). Tämä on selainpohjainen moderni remake.
@@ -64,8 +74,12 @@ dictator/
 │   │   ├── talous.js           (kassa, Sveitsin tili, suurvalta-apu)
 │   │   └── uhat.js             (attentaatti, uhkaindikaattorit)
 │   ├── nakyma/
-│   │   └── piirto.js           (näkymän piirto — yksinkertainen alkuun)
+│   │   ├── piirto.js           (näkymän piirto)
+│   │   ├── aani.js             (syntetisoidut jännitysjakson äänet)
+│   │   └── kuvat.js            (tapahtumakuvat, paikanvaraajat)
 │   └── paa.js              (käynnistys, sitoo kaiken yhteen)
+├── kuvat/                  (tapahtumakuvat + LUETTELO.md)
+├── tyokalut/               (luo-kuvaluettelo.js, paketoi.py)
 └── docs/
     ├── Dictator_GDD_V11.docx   (alkuperäinen, Sasu muokkaa)
     └── GDD.md                  (minun nopealukuinen kopio, Claude ylläpitää)

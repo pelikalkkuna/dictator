@@ -36,14 +36,14 @@ function paivitaEteneminen() {
   nappi.disabled = odottaaValintaa || !!nykyinenKriisi;
 }
 
-function merkitsePeliOhi(viesti, pakeniHengissa) {
+function merkitsePeliOhi(viesti, pakeniHengissa, kuva) {
   const pisteet = laskePisteet(pelitila, !!pakeniHengissa);
   pelitila.peliOhi = true;
   pelitila.peliOhiViesti = viesti;
   pelitila.peliOhiPisteet = pisteet;
   kierros = null;
   piirraVaihe(null);
-  piirraPeliOhi(viesti, pisteet);
+  piirraPeliOhi(viesti, pisteet, kuva || (pakeniHengissa ? "loppu-pako" : "loppu-kuolema"));
   paivitaEteneminen();
 }
 
@@ -66,28 +66,28 @@ function tarkistaSotalaukaisijat(kortti) {
 const TAISTELUN_KESTO = 2800;
 const ODOTUKSEN_KESTO = 2600;
 
-async function naytaTaistelusekvenssi(otsikko, kuvaus, tulosTeksti, voitto) {
+async function naytaTaistelusekvenssi(otsikko, kuvaus, tulosTeksti, voitto, kuva) {
   odottaaValintaa = true;
   paivitaEteneminen();
 
-  piirraSekvenssi({ otsikko, teksti: kuvaus });
+  piirraSekvenssi({ otsikko, teksti: kuvaus, kuva });
   const lopetaAanet = aloitaTaisteluAanet(TAISTELUN_KESTO);
   await odota(TAISTELUN_KESTO);
   lopetaAanet();
   soitaLopputulos(voitto);
 
-  piirraSekvenssi({ otsikko, teksti: "Tuli vaimenee", tulos: tulosTeksti });
+  piirraSekvenssi({ otsikko, teksti: "Tuli vaimenee", tulos: tulosTeksti, kuva });
   odottaaValintaa = false;
   paivitaEteneminen();
 }
 
 // Sasu (pelitestaus): "Tässä lainan haussa on kans oma jännitysnäyttö sodan tyyliin. Heti
 // odotellaan USA/RUS mikä päätös tulee."
-async function naytaOdotussekvenssi(otsikko, kuvaus, tulosTeksti, myonteinen) {
+async function naytaOdotussekvenssi(otsikko, kuvaus, tulosTeksti, myonteinen, kuva) {
   odottaaValintaa = true;
   paivitaEteneminen();
 
-  piirraSekvenssi({ otsikko, teksti: kuvaus, tyyli: "odotus" });
+  piirraSekvenssi({ otsikko, teksti: kuvaus, tyyli: "odotus", kuva });
   const alku = Date.now();
   while (Date.now() - alku < ODOTUKSEN_KESTO) {
     soitaOdotusPulssi();
@@ -95,7 +95,7 @@ async function naytaOdotussekvenssi(otsikko, kuvaus, tulosTeksti, myonteinen) {
   }
   soitaLopputulos(myonteinen);
 
-  piirraSekvenssi({ otsikko, teksti: "Vastaus saapuu", tulos: tulosTeksti, tyyli: "odotus" });
+  piirraSekvenssi({ otsikko, teksti: "Vastaus saapuu", tulos: tulosTeksti, tyyli: "odotus", kuva });
   odottaaValintaa = false;
   paivitaEteneminen();
 }
@@ -413,7 +413,8 @@ async function toteutaValittuPaatos() {
       "Suurlähetystö: " + maa,
       "Lähettilääsi odottaa vastausta",
       viesti,
-      tulos.apu > 0
+      tulos.apu > 0,
+      paatos.erikoinen === "SUURVALTA_VENAJA" ? "laina-moskova" : "laina-washington"
     );
     piirraKaikki();
     paataVaihe();
@@ -448,12 +449,14 @@ async function kasitteleUutinen() {
   let sotaTulos = null;
   let sotaOtsikko = "";
   let sotaKuvaus = "";
+  let sotaKuva = null;
 
   if (pelitila.pikasotaOdottaa) {
     pelitila.pikasotaOdottaa = false;
     sotaTulos = suoritaPikasota(pelitila);
     sotaOtsikko = "SOTA — hyökkäys Leftotoon";
     sotaKuvaus = "Ritimban joukot ylittävät rajan";
+    sotaKuva = "sota-hyokkays";
     kortti = { tapahtuma: viestiSodasta(sotaTulos, "Armeija hyökkää Leftotoon.") };
   } else if (pelitila.n1KierreKaynnissa) {
     const n1Tulos = suoritaN1Kierros(pelitila, Math.random);
@@ -461,6 +464,7 @@ async function kasitteleUutinen() {
       sotaTulos = n1Tulos;
       sotaOtsikko = "SOTA — Leftoto hyökkää";
       sotaKuvaus = "Rajalla käydään taistelua";
+      sotaKuva = "sota-puolustus";
       kortti = { tapahtuma: viestiSodasta(n1Tulos, "Leftoto hyökkää.") };
     } else {
       kortti = { tapahtuma: viestiN1Tuloksesta(n1Tulos) };
@@ -476,6 +480,7 @@ async function kasitteleUutinen() {
         sotaTulos = suoritaPikasota(pelitila);
         sotaOtsikko = "SOTA — yllätyshyökkäys";
         sotaKuvaus = "Leftoto hyökkäsi ilman varoitusta";
+        sotaKuva = "sota-yllatys";
         kortti = { tapahtuma: viestiSodasta(sotaTulos, "Leftoto hyökkää yllättäen ilman varoitusta!") };
       }
     }
@@ -485,7 +490,7 @@ async function kasitteleUutinen() {
 
   // Sota saa oman jännitysjaksonsa uutispaneelin sijaan.
   if (sotaTulos) {
-    await naytaTaistelusekvenssi(sotaOtsikko, sotaKuvaus, kortti.tapahtuma, sotaTulos.voitto);
+    await naytaTaistelusekvenssi(sotaOtsikko, sotaKuvaus, kortti.tapahtuma, sotaTulos.voitto, sotaKuva);
     if (!sotaTulos.voitto) {
       merkitsePeliOhi("Sota hävitty Leftotoa vastaan — likvidaatio. Peli päättyi.");
       return;
@@ -510,11 +515,11 @@ function kasitteleAttentaattiTarkistus() {
 
   const tulos = ratkaiseAttentaatti(pelitila);
   if (tulos.selvisi) {
-    piirraAttentaatti("Attentaattiyritys epäonnistui! Henkivartijasi pelastivat sinut.");
+    piirraAttentaatti("Attentaattiyritys epäonnistui! Henkivartijasi pelastivat sinut.", "attentaatti-torjuttu");
     return false;
   }
 
-  piirraAttentaatti("Attentaatti onnistui. Kuolit virantoimituksessa.");
+  piirraAttentaatti("Attentaatti onnistui. Kuolit virantoimituksessa.", "attentaatti-onnistui");
   merkitsePeliOhi("Attentaatti onnistui — kuolit. Peli päättyi.");
   return true;
 }
@@ -560,7 +565,8 @@ async function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
     "TAISTELU PALATSISTA",
     "Palatsin pihalla käydään taistelua",
     tulos.voitto ? "Torjuit hyökkäyksen. Palatsi on yhä sinun." : "Puolustus murtuu.",
-    tulos.voitto
+    tulos.voitto,
+    "taistelu-palatsista"
   );
 
   if (tulos.voitto) {
@@ -624,7 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("paatos-valinta").addEventListener("change", () => {
-    piirraVaikutukset("paatos-vaikutukset", valittuPaatoskortti());
+    piirraPaatoksenEsikatselu(valittuPaatoskortti());
   });
 
   document.getElementById("paatos-toteuta-nappi").addEventListener("click", toteutaValittuPaatos);
@@ -690,9 +696,11 @@ document.addEventListener("DOMContentLoaded", () => {
     nykyinenKriisi = null;
     piirraKriisi(null);
     if (tulos.onnistui) {
-      merkitsePeliOhi("Pakenit onnistuneesti (" + tulos.reitti + ")! Selvisit hengissä.", true);
+      merkitsePeliOhi("Pakenit onnistuneesti (" + tulos.reitti + ")! Selvisit hengissä.", true,
+        tulos.reitti === "helikopteri" ? "pako-helikopteri" : "pako-vuoristo");
     } else {
-      merkitsePeliOhi("Jäit kiinni paetessasi (" + tulos.reitti + ") — likvidaatio. Peli päättyi.", false);
+      merkitsePeliOhi("Jäit kiinni paetessasi (" + tulos.reitti + ") — likvidaatio. Peli päättyi.", false,
+        "pako-kiinni");
     }
   });
 
