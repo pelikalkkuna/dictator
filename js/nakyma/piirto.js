@@ -2,16 +2,12 @@ function muotoileRaha(maara) {
   return maara.toLocaleString("fi-FI");
 }
 
-function piirraKuukausi() {
-  document.getElementById("kuukausi-teksti").textContent = "Kuukausi " + pelitila.kuukausi;
+function muotoileEtumerkilla(luku) {
+  return (luku >= 0 ? "+" : "−") + Math.abs(luku);
 }
 
-function piirraKassaraportti() {
-  const kassaEl = document.getElementById("kassa-teksti");
-  kassaEl.textContent = "Valtion kassa: " + muotoileRaha(pelitila.kassa) + " (kulut " + muotoileRaha(pelitila.kuukausikulut) + "/kk)";
-
-  const laatikkoEl = document.getElementById("kassaraportti");
-  laatikkoEl.classList.toggle("kriisi", pelitila.kassakriisi);
+function piirraKuukausi() {
+  document.getElementById("kuukausi-teksti").textContent = "Kuukausi " + pelitila.kuukausi;
 }
 
 // GDD 4: vaihe vaiheelta -navigointi - pelaajalle näytetään missä kohtaa kuukautta ollaan.
@@ -23,11 +19,10 @@ function piirraVaihe(vaihe) {
     return;
   }
   vaiheEl.classList.remove("piilossa");
-  vaiheEl.textContent = "Vaihe " + vaihe.numero + "/8 — " + vaihe.nimi;
+  vaiheEl.textContent = "Vaihe " + vaihe.numero + "/" + KUUKAUSIVAIHEET.length + " — " + vaihe.nimi;
 }
 
-// GDD 4 vaiheet 1, 4 ja 6. Vaihe 1 näyttää kuukauden avauksen, vaiheet 4 ja 6 kertovat
-// mitä juuri tehty audienssi tai päätös teki kassalle.
+// GDD 4 vaihe 1. Sasu (pelitestaus): kassa näytetään enää kerran kuukaudessa, tässä.
 function piirraKassavaihe(teksti) {
   const kassavaiheEl = document.getElementById("kassavaihe");
 
@@ -36,8 +31,93 @@ function piirraKassavaihe(teksti) {
     return;
   }
   kassavaiheEl.classList.remove("piilossa");
+  kassavaiheEl.classList.toggle("kriisi", pelitila.kassakriisi);
   document.getElementById("kassavaihe-teksti").textContent = teksti;
 }
+
+// ---------------------------------------------------------------- vaikutusten esikatselu
+
+// Sasu (pelitestaus elokuu 2026): "On OK tehdä päätös heti, mutta haluttaessa saa katsoa
+// päätöksen vaikutukset." Näyttää KORTIN omat luvut (GDD 5/6:n taulukot), ei pelin tilaa -
+// tilannekuva pysyy edelleen poliisiraportin takana.
+function kuvaaMittarimuutokset(muutokset, otsikko, rivit) {
+  if (!muutokset) return;
+  for (const avain in muutokset) {
+    const arvo = muutokset[avain];
+    const nimi = pelitila.ryhmat[avain] ? pelitila.ryhmat[avain].nimi : avain;
+    if (arvo && typeof arvo === "object") {
+      // A3:n kaltainen satunnaisväli { min, max }.
+      const pienin = Math.min(arvo.min, arvo.max);
+      const suurin = Math.max(arvo.min, arvo.max);
+      rivit.push({ teksti: otsikko + " " + nimi + " " + muotoileEtumerkilla(suurin) + "…" + muotoileEtumerkilla(pienin), suunta: suurin });
+    } else {
+      rivit.push({ teksti: otsikko + " " + nimi + " " + muotoileEtumerkilla(arvo), suunta: arvo });
+    }
+  }
+}
+
+function kuvaaVaikutukset(kortti) {
+  const rivit = [];
+
+  kuvaaMittarimuutokset(kortti.suosio, "Suosio", rivit);
+  kuvaaMittarimuutokset(kortti.voima, "Voima", rivit);
+
+  if (typeof kortti.kertaluontoinen === "number") {
+    rivit.push({
+      teksti: "Kassa " + (kortti.kertaluontoinen >= 0 ? "+" : "−") + muotoileRaha(Math.abs(kortti.kertaluontoinen)),
+      suunta: kortti.kertaluontoinen
+    });
+  }
+  if (typeof kortti.kuukausikulutMuutos === "number") {
+    rivit.push({
+      teksti: "Kuukausikulut " + (kortti.kuukausikulutMuutos >= 0 ? "+" : "−")
+        + muotoileRaha(Math.abs(kortti.kuukausikulutMuutos)) + "/kk",
+      suunta: -kortti.kuukausikulutMuutos
+    });
+  }
+
+  // Erikoispäätökset laskevat summansa vasta ajohetkellä, joten niistä kerrotaan sanallisesti.
+  const erikoisselitteet = {
+    HENKIVARTIJAT: "Henkivartijoiden voima +2",
+    SVEITSI: "Siirtää puolet kassasta Sveitsin tilille (siirtomaksu 2 000)",
+    SUURVALTA_VENAJA: "Venäjän apu riippuu siitä kuinka paljon enemmän Venäjä suosii sinua kuin USA",
+    SUURVALTA_USA: "USA:n apu riippuu siitä kuinka paljon enemmän USA suosii sinua kuin Venäjä",
+    HELIKOPTERI: "Mahdollistaa helikopteripaon (voi olla rikki)",
+    PIKASOTA: "Käynnistää sodan Leftotoa vastaan",
+    ESKALAATIO: "Käynnistää sotauhkan kierteen"
+  };
+  if (kortti.erikoinen && erikoisselitteet[kortti.erikoinen]) {
+    rivit.push({ teksti: erikoisselitteet[kortti.erikoinen], suunta: 0 });
+  }
+
+  if (rivit.length === 0) {
+    rivit.push({ teksti: "Ei suoria mitattavia vaikutuksia.", suunta: 0 });
+  }
+  return rivit;
+}
+
+function piirraVaikutukset(elementtiId, kortti) {
+  const el = document.getElementById(elementtiId);
+
+  if (!kortti) {
+    el.classList.add("piilossa");
+    return;
+  }
+  el.classList.remove("piilossa");
+  el.innerHTML = "";
+
+  const lista = document.createElement("ul");
+  for (const rivi of kuvaaVaikutukset(kortti)) {
+    const li = document.createElement("li");
+    li.textContent = rivi.teksti;
+    if (rivi.suunta > 0) li.className = "nousee";
+    else if (rivi.suunta < 0) li.className = "laskee";
+    lista.appendChild(li);
+  }
+  el.appendChild(lista);
+}
+
+// ---------------------------------------------------------------- poliisiraportti
 
 // GDD 12. Kolme tilaa: ostotarjous (napit), ostettu raportti (sisältö) tai piilossa.
 function piirraPoliisiraportti(tila) {
@@ -91,28 +171,18 @@ function piirraPoliisiraportti(tila) {
   napitEl.classList.remove("piilossa");
 }
 
-// GDD 9.5 / 12 (Sasu, elokuu 2026): "Tilannekuvan saa ostaa salaisen poliisin raportissa."
-// Yläpalkki listaa ryhmät nimeltä muttei paljasta suosiota eikä voimaa - muuten raportin
-// ostamisesta ei olisi hyötyä eikä puolustusvalinnassa olisi jännitettä ("pelaaja valitsee
-// MUISTINSA varassa", "jos säästit nuo tuhannet, taistelet sokkona").
-function piirraRyhmat() {
-  const listaEl = document.getElementById("ryhmat-lista");
-  listaEl.innerHTML = "";
-  for (const avain in pelitila.ryhmat) {
-    const rivi = document.createElement("li");
-    rivi.textContent = pelitila.ryhmat[avain].nimi;
-    listaEl.appendChild(rivi);
-  }
-}
+// ---------------------------------------------------------------- audienssi ja päätös
 
 function piirraAudienssi(nykyinenAudienssi) {
   const audienssiEl = document.getElementById("audienssi");
   const tekstiEl = document.getElementById("audienssi-teksti");
   const napitEl = document.getElementById("audienssi-napit");
   const vihjeEl = document.getElementById("audienssi-swipe-vihje");
+  const vaikutusNappiEl = document.getElementById("audienssi-vaikutukset-nappi");
 
   audienssiEl.style.transform = "";
   audienssiEl.style.opacity = "";
+  piirraVaikutukset("audienssi-vaikutukset", null);
 
   if (!nykyinenAudienssi) {
     audienssiEl.classList.add("piilossa");
@@ -140,10 +210,14 @@ function piirraAudienssi(nykyinenAudienssi) {
       + " — " + (nykyinenAudienssi.hyvaksytty ? "HYVÄKSYTTY" : "HYLÄTTY");
     napitEl.style.display = "none";
     vihjeEl.style.display = "none";
+    // Ratkaisun jälkeen vaikutukset näytetään aina - päätös on jo tehty.
+    if (nykyinenAudienssi.hyvaksytty) piirraVaikutukset("audienssi-vaikutukset", nykyinenAudienssi.kortti);
   } else {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus;
     napitEl.style.display = "";
     vihjeEl.style.display = "";
+    vaikutusNappiEl.style.display = "";
+    vaikutusNappiEl.textContent = "Näytä vaikutukset";
   }
 }
 
@@ -152,6 +226,7 @@ function piirraPaatosvalinta(naytetaanko) {
 
   if (!naytetaanko) {
     paatosEl.classList.add("piilossa");
+    piirraVaikutukset("paatos-vaikutukset", null);
     return;
   }
   paatosEl.classList.remove("piilossa");
@@ -168,8 +243,56 @@ function piirraPaatosvalinta(naytetaanko) {
   }
 
   document.getElementById("paatos-toteuta-nappi").disabled = kaytettavissa.length === 0;
+  // Päätöksen vaikutukset näkyvät suoraan, koska valikosta selaillaan vaihtoehtoja.
+  if (kaytettavissa.length > 0) {
+    piirraVaikutukset("paatos-vaikutukset", kaytettavissa[0]);
+  } else {
+    piirraVaikutukset("paatos-vaikutukset", null);
+  }
 }
 
+// Sasu (pelitestaus): päätöksestä ei aiemmin kerrottu mitään - Venäjän laina saattoi tuottaa
+// nolla markkaa täysin hiljaa, eikä helikopterin ostosta jäänyt mitään merkkiä.
+function piirraPaatosTulos(teksti) {
+  const el = document.getElementById("paatos-tulos");
+
+  if (!teksti) {
+    el.classList.add("piilossa");
+    return;
+  }
+  el.classList.remove("piilossa");
+  document.getElementById("paatos-tulos-teksti").textContent = teksti;
+}
+
+// ---------------------------------------------------------------- jännitysjakso
+
+// Sasu (pelitestaus): "Sota meni vauhdilla. Siinä kuin joku pikku uutinen. Taistelusekvenssiin
+// kuuluu jännitys." Sama koskee suurvaltalainan odotusta.
+function piirraSekvenssi(tila) {
+  const el = document.getElementById("sekvenssi");
+  const tulosEl = document.getElementById("sekvenssi-tulos");
+
+  if (!tila) {
+    el.classList.add("piilossa");
+    return;
+  }
+  el.classList.remove("piilossa");
+  el.classList.toggle("odotus", tila.tyyli === "odotus");
+
+  document.getElementById("sekvenssi-otsikko").textContent = tila.otsikko;
+  document.getElementById("sekvenssi-teksti").textContent = tila.teksti;
+
+  if (tila.tulos) {
+    tulosEl.classList.remove("piilossa");
+    tulosEl.textContent = tila.tulos;
+  } else {
+    tulosEl.classList.add("piilossa");
+  }
+}
+
+// ---------------------------------------------------------------- uutiset, kriisi, loppu
+
+// Sasu (pelitestaus): "Uutisissa ei tule N##-merkkiä vaan ihan pelkkä tapahtuma."
 function piirraUutinen(kortti) {
   const uutinenEl = document.getElementById("uutinen");
 
@@ -178,7 +301,7 @@ function piirraUutinen(kortti) {
     return;
   }
   uutinenEl.classList.remove("piilossa");
-  document.getElementById("uutinen-teksti").textContent = kortti.id + ": " + kortti.tapahtuma;
+  document.getElementById("uutinen-teksti").textContent = kortti.tapahtuma;
 }
 
 function piirraKriisi(kriisi) {
@@ -269,5 +392,15 @@ function piirraPeliOhi(viesti, pisteet) {
     const li = document.createElement("li");
     li.textContent = rivi;
     listaEl.appendChild(li);
+  }
+
+  // Sasu (pelitestaus): ryhmät näkyvät vain poliisiraportissa tai pelin päättyessä.
+  const ryhmatEl = document.getElementById("peli-ohi-ryhmat");
+  ryhmatEl.innerHTML = "";
+  for (const avain in pelitila.ryhmat) {
+    const ryhma = pelitila.ryhmat[avain];
+    const li = document.createElement("li");
+    li.textContent = ryhma.nimi + " — suosio " + ryhma.suosio + ", voima " + ryhma.voima;
+    ryhmatEl.appendChild(li);
   }
 }

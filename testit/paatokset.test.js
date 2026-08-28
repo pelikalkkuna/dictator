@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { paatoskortit } = require("../js/data/paatokset.js");
 const {
   suurvaltaAvunSumma,
+  pyydaSuurvaltaApua,
   onkoPaatosKaytettavissa,
   siirraSveitsinTilille,
   toteutaPaatos
@@ -31,6 +32,26 @@ function uusiTila(yliajot) {
 
 test("päätöksiä on GDD:n mukainen 19 kappaletta", () => {
   assert.equal(paatoskortit.length, 19);
+});
+
+// Pelitestissä (Sasu, elokuu 2026) Venäjän laina pelin alussa "ei sanonut mitään" - syy oli
+// että aloitusarvoilla molempien suurvaltojen suosio on 7, jolloin suosioero on 0 ja apu 0.
+// Sääntö on GDD 3.4:n mukainen; vika oli siinä ettei tuloksesta kerrottu pelaajalle mitään.
+test("aloitusarvoilla suurvalta-apu on nolla koska suosioero on nolla", () => {
+  const tila = uusiTila();
+  assert.equal(tila.ryhmat.venaja.suosio, tila.ryhmat.usa.suosio);
+  const apu = pyydaSuurvaltaApua(tila, "venaja", "usa");
+  assert.equal(apu, 0);
+  assert.equal(tila.kassa, 1000000); // kassa ei muutu
+});
+
+test("suurvalta-apu maksetaan kun oma suurvalta suosii selvästi enemmän", () => {
+  const tila = uusiTila();
+  tila.ryhmat.usa.suosio = 9;
+  tila.ryhmat.venaja.suosio = 2; // ero 7
+  const apu = pyydaSuurvaltaApua(tila, "usa", "venaja");
+  assert.equal(apu, 270000);
+  assert.equal(tila.kassa, 1270000);
 });
 
 test("suurvalta-avun summataulukko GDD 3.4:n mukaisesti", () => {

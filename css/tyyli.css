@@ -225,11 +225,112 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Vaikutusten esikatselu: audienssikortin ja päätöksen omat luvut, ei pelin tilaa. */
+.vaikutukset {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.vaikutukset.piilossa {
+  display: none;
+}
+
+.vaikutukset ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vaikutukset li {
+  padding: 0.15rem 0;
+}
+
+.vaikutukset .nousee {
+  color: #7ec87e;
+}
+
+.vaikutukset .laskee {
+  color: #e08a8a;
+}
+
+/* Jännitysjakso: sota ja suurvaltalainan odotus (GDD 1.5:n punainen kriisiväri). */
+.sekvenssi {
+  border-left: 4px solid #b22222;
+  background: #241a1a;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.sekvenssi.piilossa {
+  display: none;
+}
+
+.sekvenssi.odotus {
+  border-left-color: #b8a24a;
+  background: #262214;
+}
+
+#sekvenssi-teksti::after {
+  content: "";
+  animation: pisteet 1.2s steps(4, end) infinite;
+}
+
+@keyframes pisteet {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
+
+.sekvenssi-tulos {
+  font-weight: bold;
+  font-size: 1.05rem;
+  margin-bottom: 0;
+}
+
+.sekvenssi-tulos.piilossa {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sekvenssi-teksti::after {
+    animation: none;
+    content: "...";
+  }
+}
+
+#peli-ohi-ryhmat {
+  list-style: none;
+  padding: 0;
+}
+
+#peli-ohi-ryhmat li {
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #3a2a2a;
+}
+
+#ohjaimet {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   min-height: 44px;
   font-size: 1rem;
+}
+
+button.toissijainen {
+  background: transparent;
+  color: #bbb;
+  border: 1px solid #555;
 }
 
 select {

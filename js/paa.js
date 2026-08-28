@@ -5,13 +5,16 @@ let nykyinenKriisi = null;
 let kierros = null;
 let kuukausiaAloitettu = 0;
 // true kun käynnissä oleva vaihe odottaa pelaajan omaa valintaa omista napeistaan
-// (audienssi, päätös, poliisiraportin osto) - silloin yleinen "Jatka" on lukossa.
+// (audienssi, päätös, raportin osto) tai kun jännitysjakso on kesken - silloin yleinen
+// "Jatka" on lukossa.
 let odottaaValintaa = false;
+
+function odota(millisekuntia) {
+  return new Promise(ratkaise => setTimeout(ratkaise, millisekuntia));
+}
 
 function piirraKaikki() {
   piirraKuukausi();
-  piirraKassaraportti();
-  piirraRyhmat();
 }
 
 function onkoVaiheessa(...avaimet) {
@@ -55,15 +58,59 @@ function tarkistaSotalaukaisijat(kortti) {
   }
 }
 
+// ---------------------------------------------------------------- jännitysjaksot
+
+// Sasu (pelitestaus elokuu 2026): "Sota meni vauhdilla. Siinä kuin joku pikku uutinen.
+// Taistelusekvenssiin kuuluu jännitys. Lähtee erillinen poikkeustilanäyttö päälle jossa on
+// taistelun ääniä ja hetken ammuskelun jälkeen kerrotaan lopputulos."
+const TAISTELUN_KESTO = 2800;
+const ODOTUKSEN_KESTO = 2600;
+
+async function naytaTaistelusekvenssi(otsikko, kuvaus, tulosTeksti, voitto) {
+  odottaaValintaa = true;
+  paivitaEteneminen();
+
+  piirraSekvenssi({ otsikko, teksti: kuvaus });
+  const lopetaAanet = aloitaTaisteluAanet(TAISTELUN_KESTO);
+  await odota(TAISTELUN_KESTO);
+  lopetaAanet();
+  soitaLopputulos(voitto);
+
+  piirraSekvenssi({ otsikko, teksti: "Tuli vaimenee", tulos: tulosTeksti });
+  odottaaValintaa = false;
+  paivitaEteneminen();
+}
+
+// Sasu (pelitestaus): "Tässä lainan haussa on kans oma jännitysnäyttö sodan tyyliin. Heti
+// odotellaan USA/RUS mikä päätös tulee."
+async function naytaOdotussekvenssi(otsikko, kuvaus, tulosTeksti, myonteinen) {
+  odottaaValintaa = true;
+  paivitaEteneminen();
+
+  piirraSekvenssi({ otsikko, teksti: kuvaus, tyyli: "odotus" });
+  const alku = Date.now();
+  while (Date.now() - alku < ODOTUKSEN_KESTO) {
+    soitaOdotusPulssi();
+    await odota(650);
+  }
+  soitaLopputulos(myonteinen);
+
+  piirraSekvenssi({ otsikko, teksti: "Vastaus saapuu", tulos: tulosTeksti, tyyli: "odotus" });
+  odottaaValintaa = false;
+  paivitaEteneminen();
+}
+
 // ---------------------------------------------------------------- kuukausikierros
 
 function tyhjennaKuukaudenPaneelit() {
   piirraAudienssi(null);
   piirraPaatosvalinta(false);
+  piirraPaatosTulos(null);
   piirraUutinen(null);
   piirraAttentaatti(null);
   piirraKassavaihe(null);
   piirraPoliisiraportti(null);
+  piirraSekvenssi(null);
 }
 
 function aloitaUusiKuukausi() {
@@ -75,7 +122,7 @@ function aloitaUusiKuukausi() {
   siirraSeuraavaanVaiheeseen();
 }
 
-function siirraSeuraavaanVaiheeseen() {
+async function siirraSeuraavaanVaiheeseen() {
   const vaihe = seuraavaVaihe(kierros);
 
   if (!vaihe) {
@@ -87,14 +134,14 @@ function siirraSeuraavaanVaiheeseen() {
   }
 
   piirraVaihe(vaihe);
-  suoritaVaihe(vaihe);
+  await suoritaVaihe(vaihe);
 }
 
-function suoritaVaihe(vaihe) {
+async function suoritaVaihe(vaihe) {
   odottaaValintaa = false;
 
   switch (vaihe.avain) {
-    case "kassaraportti1":
+    case "kassaraportti":
       suoritaKuukaudenAvaus();
       break;
     case "poliisiraportti1":
@@ -104,17 +151,11 @@ function suoritaVaihe(vaihe) {
     case "audienssi":
       suoritaAudienssivaihe();
       break;
-    case "kassaraportti2":
-      suoritaValikassaraportti(kierros.audienssinKassavaikutus, "Audienssin");
-      break;
     case "paatos":
       suoritaPaatosvaihe();
       break;
-    case "kassaraportti3":
-      suoritaValikassaraportti(kierros.paatoksenKassavaikutus, "Päätöksen");
-      break;
     case "uutiset":
-      suoritaUutisvaihe();
+      await suoritaUutisvaihe();
       break;
   }
 
@@ -135,13 +176,14 @@ function tarkistaKeskeytykset() {
 }
 
 // Kutsutaan kun pelaajan oma valinta päätti vaiheen (audienssi, päätös) tai kun kriisi
-// ratkesi voittoon kesken kuukauden - jatketaan kierrosta ellei mikään keskeyttänyt.
-function jatkaKierrosta() {
-  if (tarkistaKeskeytykset() || !kierros) {
-    paivitaEteneminen();
-    return;
-  }
-  siirraSeuraavaanVaiheeseen();
+// ratkesi voittoon kesken kuukauden. EI siirry automaattisesti seuraavaan vaiheeseen:
+// pelaaja saa lukea rauhassa mitä juuri tapahtui ja painaa itse "Jatka". Kuukausi kertyy
+// näin ruudulle ylhäältä alas tapahtumaketjuna (Sasu, pelitestaus: "kk etenee sivuna
+// alaspäin -> tapahtumat tuntuvat etenevän").
+function paataVaihe() {
+  odottaaValintaa = false;
+  tarkistaKeskeytykset();
+  paivitaEteneminen();
 }
 
 // ---------------------------------------------------------------- vaihe 1: kassaraportti
@@ -178,7 +220,7 @@ function suoritaKuukaudenAvaus() {
   piirraKassavaihe(teksti);
 }
 
-// ---------------------------------------------------------------- vaiheet 2 ja 8: poliisiraportti
+// ---------------------------------------------------------------- vaiheet 2 ja 6: poliisiraportti
 
 function suoritaPoliisiraporttivaihe() {
   const saatavuus = poliisiraportinSaatavuus(pelitila);
@@ -190,17 +232,16 @@ function suoritaPoliisiraporttivaihe() {
 // ---------------------------------------------------------------- vaihe 3: audienssi
 
 function suoritaAudienssivaihe() {
-  piirraKassavaihe(null);
+  // Poliisiraportti on kertaluonteinen tilannekuva: se katoaa kun vaihe vaihtuu, jotta
+  // puolustusvalinta tehdään muistin varassa (GDD 9.5).
   piirraPoliisiraportti(null);
 
-  kierros.audienssinKassaEnnen = otaKassatilanne(pelitila);
   const tulos = valitseAudienssi(pelitila, audienssikortit, heitaD3);
 
   // GDD 4.1: jos kaikkien kolmen ryhmän pakat ovat tyhjät, audienssia ei pidetä tässä kuussa.
   if (!tulos) {
     nykyinenAudienssi = null;
     piirraAudienssi({ tyhja: true });
-    kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
     return;
   }
 
@@ -208,7 +249,6 @@ function suoritaAudienssivaihe() {
   if (onkoPakkoEi(pelitila, tulos.kortti)) {
     hylkaaAudienssi(pelitila, tulos.ryhmaAvain, tulos.kortti);
     nykyinenAudienssi = null;
-    kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
     piirraKaikki();
     piirraAudienssi({ ryhmaAvain: tulos.ryhmaAvain, kortti: tulos.kortti, pakkoEi: true });
     tarkistaKeskeytykset();
@@ -235,12 +275,11 @@ function ratkaiseAudienssi(hyvaksytty) {
 
   nykyinenAudienssi = null;
   odottaaValintaa = false;
-  kirjaaKassavaikutus(kierros, "audienssinKassavaikutus", kierros.audienssinKassaEnnen, pelitila);
 
   piirraKaikki();
   piirraAudienssi({ ratkaistu: true, ryhmaAvain: ratkaistu.ryhmaAvain, kortti: ratkaistu.kortti, hyvaksytty });
 
-  jatkaKierrosta();
+  paataVaihe();
 }
 
 // GDD 1.5: swipe-mekaniikka audiensseissa (oikealle = kyllä, vasemmalle = ei).
@@ -296,109 +335,136 @@ function alustaAudienssiSwipe() {
   audienssiEl.addEventListener("pointercancel", lopetaSwipe);
 }
 
-// ---------------------------------------------------------------- vaiheet 4 ja 6: kassaraportti
-
-function muotoileEro(ero) {
-  return (ero >= 0 ? "+" : "−") + muotoileRaha(Math.abs(ero));
-}
-
-// Ratkaistu audienssikortti jätetään tarkoituksella näkyviin tämän vaiheen ajaksi, jotta
-// pelaaja näkee vierekkäin mitä päätti ja mitä se maksoi. Vaihe 5 piilottaa sen.
-function suoritaValikassaraportti(vaikutus, mika) {
-  const osat = [];
-  if (vaikutus.ennen.kassa !== vaikutus.jalkeen.kassa) {
-    osat.push("kassa " + muotoileEro(vaikutus.jalkeen.kassa - vaikutus.ennen.kassa)
-      + " → " + muotoileRaha(vaikutus.jalkeen.kassa));
-  }
-  if (vaikutus.ennen.kuukausikulut !== vaikutus.jalkeen.kuukausikulut) {
-    osat.push("kuukausikulut " + muotoileEro(vaikutus.jalkeen.kuukausikulut - vaikutus.ennen.kuukausikulut)
-      + " → " + muotoileRaha(vaikutus.jalkeen.kuukausikulut) + "/kk");
-  }
-
-  let teksti = mika + " jälkeen: " + osat.join(", ") + ".";
-  if (pelitila.kassakriisi) {
-    teksti += " KASSAKRIISI — rahalliset toiminnot lukossa.";
-  }
-  piirraKassavaihe(teksti);
-}
-
-// ---------------------------------------------------------------- vaihe 5: presidentin päätös
+// ---------------------------------------------------------------- vaihe 4: presidentin päätös
 
 function suoritaPaatosvaihe() {
-  piirraKassavaihe(null);
-  piirraAudienssi(null);
-
-  kierros.paatoksenKassaEnnen = otaKassatilanne(pelitila);
   piirraPaatosvalinta(true);
   odottaaValintaa = true;
 }
 
-function paataPaatosvaihe() {
-  odottaaValintaa = false;
-  kirjaaKassavaikutus(kierros, "paatoksenKassavaikutus", kierros.paatoksenKassaEnnen, pelitila);
-  piirraPaatosvalinta(false);
-  piirraKaikki();
-  jatkaKierrosta();
+function valittuPaatoskortti() {
+  const valintaEl = document.getElementById("paatos-valinta");
+  return paatoskortit.find(p => p.id === valintaEl.value) || null;
 }
 
-function toteutaValittuPaatos() {
+// Sasu (pelitestaus): päätöksen tulos jäi aiemmin kokonaan kertomatta - Venäjän laina saattoi
+// tuottaa nolla markkaa täysin hiljaa ja polttaa silti kertakäyttöisen kortin.
+function viestiPaatoksesta(paatos, tulos) {
+  if (paatos.erikoinen === "SVEITSI") {
+    return tulos.onnistui
+      ? "Siirsit " + muotoileRaha(tulos.siirretty) + " Sveitsin tilille."
+      : tulos.viesti + " — siirto ei onnistunut.";
+  }
+  if (paatos.erikoinen === "SUURVALTA_VENAJA" || paatos.erikoinen === "SUURVALTA_USA") {
+    const maa = paatos.erikoinen === "SUURVALTA_VENAJA" ? "Venäjä" : "Yhdysvallat";
+    return tulos.apu > 0
+      ? maa + " myöntää " + muotoileRaha(tulos.apu) + "."
+      : maa + " kuuntelee kohteliaasti eikä lupaa mitään. Et saanut markkaakaan.";
+  }
+  if (paatos.erikoinen === "HELIKOPTERI") {
+    return "Pakohelikopteri hankittu ja piilotettu palatsin katolle. Hinta "
+      + muotoileRaha(Math.abs(paatos.kertaluontoinen)) + ".";
+  }
+  if (paatos.erikoinen === "HENKIVARTIJAT") {
+    return "Henkivartijakaarti vahvistettu. Hinta " + muotoileRaha(Math.abs(paatos.kertaluontoinen)) + ".";
+  }
+
+  let viesti = paatos.paatos + " — toteutettu.";
+  if (typeof paatos.kertaluontoinen === "number" && paatos.kertaluontoinen !== 0) {
+    viesti += paatos.kertaluontoinen < 0
+      ? " Hinta " + muotoileRaha(-paatos.kertaluontoinen) + "."
+      : " Tuotti " + muotoileRaha(paatos.kertaluontoinen) + ".";
+  }
+  if (typeof paatos.kuukausikulutMuutos === "number" && paatos.kuukausikulutMuutos !== 0) {
+    viesti += paatos.kuukausikulutMuutos > 0
+      ? " Kuukausikulut nousevat " + muotoileRaha(paatos.kuukausikulutMuutos) + "."
+      : " Kuukausikulut laskevat " + muotoileRaha(-paatos.kuukausikulutMuutos) + ".";
+  }
+  return viesti;
+}
+
+function paataPaatosvaihe() {
+  odottaaValintaa = false;
+  piirraPaatosvalinta(false);
+  piirraKaikki();
+  paataVaihe();
+}
+
+async function toteutaValittuPaatos() {
   if (!onkoVaiheessa("paatos")) return;
 
-  const valintaEl = document.getElementById("paatos-valinta");
-  const paatos = paatoskortit.find(p => p.id === valintaEl.value);
-  if (paatos) {
-    toteutaPaatos(pelitila, paatos);
-    tarkistaSotalaukaisijat(paatos);
+  const paatos = valittuPaatoskortti();
+  if (!paatos) {
+    paataPaatosvaihe();
+    return;
   }
+
+  const tulos = toteutaPaatos(pelitila, paatos);
+  tarkistaSotalaukaisijat(paatos);
+  const viesti = viestiPaatoksesta(paatos, tulos);
+
+  piirraPaatosvalinta(false);
+  piirraKaikki();
+
+  // Suurvalta-apu on oma jännityshetkensä: vastausta odotetaan, sitten se kerrotaan.
+  if (paatos.erikoinen === "SUURVALTA_VENAJA" || paatos.erikoinen === "SUURVALTA_USA") {
+    const maa = paatos.erikoinen === "SUURVALTA_VENAJA" ? "Moskova" : "Washington";
+    await naytaOdotussekvenssi(
+      "Suurlähetystö: " + maa,
+      "Lähettilääsi odottaa vastausta",
+      viesti,
+      tulos.apu > 0
+    );
+    piirraKaikki();
+    paataVaihe();
+    return;
+  }
+
+  piirraPaatosTulos(viesti);
   paataPaatosvaihe();
 }
 
-// ---------------------------------------------------------------- vaihe 7: uutisvaihe
+// ---------------------------------------------------------------- vaihe 5: uutisvaihe
 
-function viestiPikasodasta(tulos) {
+function viestiSodasta(tulos, johdanto) {
   return tulos.voitto
-    ? "Armeija hyökkää Leftotoon — Ritimba voittaa pikasodan! (" + tulos.ritimba + " vs " + tulos.leftoto + ")"
-    : "Armeija hyökkää Leftotoon — Ritimba HÄVIÄÄ pikasodan. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
-}
-
-function viestiYllatyshyokkayksesta(tulos) {
-  return tulos.voitto
-    ? "Leftoto hyökkää yllättäen ilman varoitusta! Ritimba torjuu hyökkäyksen. (" + tulos.ritimba + " vs " + tulos.leftoto + ")"
-    : "Leftoto hyökkää yllättäen ilman varoitusta! Ritimba HÄVIÄÄ. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
+    ? johdanto + " Ritimba voittaa! (" + tulos.ritimba + " vs " + tulos.leftoto + ")"
+    : johdanto + " Ritimba HÄVIÄÄ. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
 }
 
 function viestiN1Tuloksesta(tulos) {
-  if (tulos.tyyppi === "sota") {
-    return tulos.voitto
-      ? "Leftoto hyökkää — Ritimba voittaa sodan! (" + tulos.ritimba + " vs " + tulos.leftoto + ")"
-      : "Leftoto hyökkää — Ritimba HÄVIÄÄ sodan. (" + tulos.ritimba + " vs " + tulos.leftoto + ")";
-  }
   if (tulos.tyyppi === "peraantyminen") {
     return "Leftoton johto perääntyy! Kansa juhlii diktaattorin voimannäyttöä.";
   }
   return "Leftoton sotauhka jatkuu (kierros " + tulos.kierros + ").";
 }
 
-function suoritaUutisvaihe() {
-  piirraKassavaihe(null);
-  piirraAudienssi(null);
-  piirraPaatosvalinta(false);
-
-  kasitteleUutinen();
+async function suoritaUutisvaihe() {
+  await kasitteleUutinen();
 }
 
-function kasitteleUutinen() {
+async function kasitteleUutinen() {
   let kortti;
   let sotaTulos = null;
+  let sotaOtsikko = "";
+  let sotaKuvaus = "";
 
   if (pelitila.pikasotaOdottaa) {
     pelitila.pikasotaOdottaa = false;
     sotaTulos = suoritaPikasota(pelitila);
-    kortti = { id: "SOTA", tapahtuma: viestiPikasodasta(sotaTulos) };
+    sotaOtsikko = "SOTA — hyökkäys Leftotoon";
+    sotaKuvaus = "Ritimban joukot ylittävät rajan";
+    kortti = { tapahtuma: viestiSodasta(sotaTulos, "Armeija hyökkää Leftotoon.") };
   } else if (pelitila.n1KierreKaynnissa) {
     const n1Tulos = suoritaN1Kierros(pelitila, Math.random);
-    if (n1Tulos.tyyppi === "sota") sotaTulos = n1Tulos;
-    kortti = { id: "N1", tapahtuma: viestiN1Tuloksesta(n1Tulos) };
+    if (n1Tulos.tyyppi === "sota") {
+      sotaTulos = n1Tulos;
+      sotaOtsikko = "SOTA — Leftoto hyökkää";
+      sotaKuvaus = "Rajalla käydään taistelua";
+      kortti = { tapahtuma: viestiSodasta(n1Tulos, "Leftoto hyökkää.") };
+    } else {
+      kortti = { tapahtuma: viestiN1Tuloksesta(n1Tulos) };
+    }
   } else {
     kortti = nostaUutinen(pelitila, uutiskortit);
     if (kortti) {
@@ -408,17 +474,24 @@ function kasitteleUutinen() {
       // mahdollinen - harvinainen yllätyssota ilman N1-puskuria (samat säännöt kuin A1).
       if (kortti.erikoinen === "N3_YLLATYSHYOKKAYS") {
         sotaTulos = suoritaPikasota(pelitila);
-        kortti = { id: "N3", tapahtuma: viestiYllatyshyokkayksesta(sotaTulos) };
+        sotaOtsikko = "SOTA — yllätyshyökkäys";
+        sotaKuvaus = "Leftoto hyökkäsi ilman varoitusta";
+        kortti = { tapahtuma: viestiSodasta(sotaTulos, "Leftoto hyökkää yllättäen ilman varoitusta!") };
       }
     }
   }
 
   piirraKaikki();
-  piirraUutinen(kortti);
 
-  if (sotaTulos && !sotaTulos.voitto) {
-    merkitsePeliOhi("Sota hävitty Leftotoa vastaan — likvidaatio. Peli päättyi.");
-    return;
+  // Sota saa oman jännitysjaksonsa uutispaneelin sijaan.
+  if (sotaTulos) {
+    await naytaTaistelusekvenssi(sotaOtsikko, sotaKuvaus, kortti.tapahtuma, sotaTulos.voitto);
+    if (!sotaTulos.voitto) {
+      merkitsePeliOhi("Sota hävitty Leftotoa vastaan — likvidaatio. Peli päättyi.");
+      return;
+    }
+  } else {
+    piirraUutinen(kortti);
   }
 
   if (kasitteleAttentaattiTarkistus()) return;
@@ -479,8 +552,17 @@ function siirryPuolustusvaiheeseen(kriisi) {
   paivitaEteneminen();
 }
 
-function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
+async function ratkaiseJaNaytaPuolustustulos(kriisi, valittuRyhmaAvain) {
   const tulos = ratkaisePuolustus(pelitila, kriisi, valittuRyhmaAvain);
+
+  piirraKriisi(null);
+  await naytaTaistelusekvenssi(
+    "TAISTELU PALATSISTA",
+    "Palatsin pihalla käydään taistelua",
+    tulos.voitto ? "Torjuit hyökkäyksen. Palatsi on yhä sinun." : "Puolustus murtuu.",
+    tulos.voitto
+  );
+
   if (tulos.voitto) {
     kriisi.vaihe = "rangaistus";
     piirraKriisi(kriisi);
@@ -497,7 +579,7 @@ function paataKriisi() {
   nykyinenKriisi = null;
   piirraKaikki();
   piirraKriisi(null);
-  jatkaKierrosta();
+  paataVaihe();
 }
 
 // ---------------------------------------------------------------- käynnistys
@@ -524,12 +606,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.getElementById("aani-nappi").addEventListener("click", (e) => {
+    const paalla = vaihdaAani();
+    e.currentTarget.textContent = "Ääni: " + (paalla ? "päällä" : "pois");
+    e.currentTarget.setAttribute("aria-pressed", String(paalla));
+  });
+
   document.getElementById("hyvaksy-nappi").addEventListener("click", () => ratkaiseAudienssi(true));
   document.getElementById("hylkaa-nappi").addEventListener("click", () => ratkaiseAudienssi(false));
+
+  // Vapaaehtoinen vaikutusten esikatselu ennen päätöstä (Sasu, pelitestaus).
+  document.getElementById("audienssi-vaikutukset-nappi").addEventListener("click", (e) => {
+    if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi || nykyinenAudienssi.tyhja) return;
+    const naytossa = !document.getElementById("audienssi-vaikutukset").classList.contains("piilossa");
+    piirraVaikutukset("audienssi-vaikutukset", naytossa ? null : nykyinenAudienssi.kortti);
+    e.currentTarget.textContent = naytossa ? "Näytä vaikutukset" : "Piilota vaikutukset";
+  });
+
+  document.getElementById("paatos-valinta").addEventListener("change", () => {
+    piirraVaikutukset("paatos-vaikutukset", valittuPaatoskortti());
+  });
 
   document.getElementById("paatos-toteuta-nappi").addEventListener("click", toteutaValittuPaatos);
   document.getElementById("paatos-ohita-nappi").addEventListener("click", () => {
     if (!onkoVaiheessa("paatos")) return;
+    piirraPaatosTulos("Et tehnyt päätöstä tässä kuussa.");
     paataPaatosvaihe();
   });
 

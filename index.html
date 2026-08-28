@@ -12,13 +12,6 @@
   <p id="kuukausi-teksti"></p>
   <p id="vaihe-teksti" class="vaihe-teksti piilossa"></p>
 
-  <div id="kassaraportti" class="kassaraportti">
-    <p id="kassa-teksti"></p>
-  </div>
-
-  <h2>Ryhmät</h2>
-  <ul id="ryhmat-lista"></ul>
-
   <div id="kassavaihe" class="kassaraportti piilossa">
     <h2>Kassaraportti</h2>
     <p id="kassavaihe-teksti"></p>
@@ -41,10 +34,12 @@
   <div id="audienssi" class="audienssi piilossa">
     <h2>Audienssi</h2>
     <p id="audienssi-teksti"></p>
+    <div id="audienssi-vaikutukset" class="vaikutukset piilossa"></div>
     <p id="audienssi-swipe-vihje" class="swipe-vihje">← pyyhkäise hylätäksesi&nbsp;&nbsp;&nbsp;&nbsp;pyyhkäise hyväksyäksesi →</p>
     <div id="audienssi-napit">
       <button id="hyvaksy-nappi">Hyväksy</button>
       <button id="hylkaa-nappi">Hylkää</button>
+      <button id="audienssi-vaikutukset-nappi" class="toissijainen">Näytä vaikutukset</button>
     </div>
   </div>
 
@@ -52,10 +47,22 @@
     <h2>Presidentin päätös</h2>
     <p>Yksi päätös per kuukausi. Rahalliset päätökset lukittuvat kassakriisissä.</p>
     <select id="paatos-valinta"></select>
+    <div id="paatos-vaikutukset" class="vaikutukset piilossa"></div>
     <div>
       <button id="paatos-toteuta-nappi">Toteuta</button>
       <button id="paatos-ohita-nappi">Ohita</button>
     </div>
+  </div>
+
+  <div id="paatos-tulos" class="audienssi piilossa">
+    <h2>Päätös tehty</h2>
+    <p id="paatos-tulos-teksti"></p>
+  </div>
+
+  <div id="sekvenssi" class="sekvenssi piilossa">
+    <h2 id="sekvenssi-otsikko"></h2>
+    <p id="sekvenssi-teksti"></p>
+    <p id="sekvenssi-tulos" class="sekvenssi-tulos piilossa"></p>
   </div>
 
   <div id="uutinen" class="uutinen piilossa">
@@ -102,10 +109,15 @@
     <div id="peli-ohi-pisteet" class="piilossa">
       <p id="peli-ohi-titteli"></p>
       <ul id="peli-ohi-pisteet-lista"></ul>
+      <h3>Loppuasetelma</h3>
+      <ul id="peli-ohi-ryhmat"></ul>
     </div>
   </div>
 
-  <button id="seuraava-kuukausi-nappi">Seuraava kuukausi</button>
+  <div id="ohjaimet">
+    <button id="seuraava-kuukausi-nappi">Seuraava kuukausi</button>
+    <button id="aani-nappi" class="toissijainen" aria-pressed="true">Ääni: päällä</button>
+  </div>
 </main>
 
 <script src="js/pelitila.js"></script>
@@ -125,6 +137,7 @@
 <script src="js/moottori/kuukausikierros.js"></script>
 <script src="js/moottori/pako.js"></script>
 <script src="js/moottori/pisteytys.js"></script>
+<script src="js/nakyma/aani.js"></script>
 <script src="js/nakyma/piirto.js"></script>
 <script src="js/paa.js"></script>
 </body>
