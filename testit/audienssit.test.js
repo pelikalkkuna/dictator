@@ -5,9 +5,11 @@ const {
   luoAudienssipakat,
   valitseAudienssiryhma,
   valitseAudienssi,
+  ehdotaToinenKortti,
   onkoPakkoEi,
   hyvaksyAudienssi,
-  hylkaaAudienssi
+  hylkaaAudienssi,
+  ohitaAudienssi
 } = require("../js/moottori/audienssit.js");
 
 function uusiTila(yliajot) {
@@ -44,7 +46,7 @@ test("D3-heitto valitsee oikean ryhmän", () => {
 test("A1 hyväksyttynä nostaa armeijan suosiota ja voimaa GDD:n mukaisesti", () => {
   const tila = uusiTila();
   const a1 = audienssikortit.armeija.find(k => k.id === "A1");
-  hyvaksyAudienssi(tila, a1);
+  hyvaksyAudienssi(tila, "armeija", a1);
   assert.equal(tila.ryhmat.armeija.suosio, 9); // rajautuu 7+3=10 -> 9
   assert.equal(tila.ryhmat.talonpojat.suosio, 6);
   assert.equal(tila.ryhmat.leftoto.suosio, 3);
@@ -60,11 +62,11 @@ test("A3 arpoo sissien voimavaikutuksen väliltä -1..-2 (GDD:n epäselvä väli
   assert.deepEqual(a3.voima.sissit, { min: -2, max: -1 });
 
   const tilaPieni = uusiTila();
-  hyvaksyAudienssi(tilaPieni, a3, () => 0); // pienin arvo välistä -> -2
+  hyvaksyAudienssi(tilaPieni, "armeija", a3, () => 0); // pienin arvo välistä -> -2
   assert.equal(tilaPieni.ryhmat.sissit.voima, 4); // 6 - 2
 
   const tilaSuuri = uusiTila();
-  hyvaksyAudienssi(tilaSuuri, a3, () => 0.999); // suurin arvo välistä -> -1
+  hyvaksyAudienssi(tilaSuuri, "armeija", a3, () => 0.999); // suurin arvo välistä -> -1
   assert.equal(tilaSuuri.ryhmat.sissit.voima, 5); // 6 - 1
 });
 
@@ -87,7 +89,7 @@ test("suosio ei laske alle nollan hylätyssä audienssissa", () => {
 test("kuukausikulutMuutos vaikuttaa kuukausikuluihin hyväksynnässä", () => {
   const tila = uusiTila();
   const a4 = audienssikortit.armeija.find(k => k.id === "A4"); // +5k/kk
-  hyvaksyAudienssi(tila, a4);
+  hyvaksyAudienssi(tila, "armeija", a4);
   assert.equal(tila.kuukausikulut, 50000);
 });
 
@@ -125,10 +127,56 @@ test("valitseAudienssi palauttaa null kun kaikki pakat ovat tyhjät", () => {
   assert.equal(tulos, null);
 });
 
-test("valittu kortti poistuu pakasta eikä palaa", () => {
+test("valittu kortti EI poistu pakasta ennen kuin se kuitataan kyllä/ei-päätöksellä", () => {
   const tila = uusiTila();
   const alkuperainenMaara = tila.audienssipakat.armeija.length;
   const tulos = valitseAudienssi(tila, audienssikortit, () => 1);
-  assert.equal(tila.audienssipakat.armeija.length, alkuperainenMaara - 1);
-  assert.equal(tila.audienssipakat.armeija.includes(tulos.kortti.id), false);
+  assert.equal(tila.audienssipakat.armeija.length, alkuperainenMaara);
+  assert.equal(tila.audienssipakat.armeija.includes(tulos.kortti.id), true);
+});
+
+test("hyvaksyAudienssi kuluttaa kortin pakasta", () => {
+  const tila = uusiTila();
+  const a1 = audienssikortit.armeija.find(k => k.id === "A1");
+  hyvaksyAudienssi(tila, "armeija", a1);
+  assert.equal(tila.audienssipakat.armeija.includes("A1"), false);
+});
+
+test("hylkaaAudienssi kuluttaa kortin pakasta", () => {
+  const tila = uusiTila();
+  const a2 = audienssikortit.armeija.find(k => k.id === "A2");
+  hylkaaAudienssi(tila, "armeija", a2);
+  assert.equal(tila.audienssipakat.armeija.includes("A2"), false);
+});
+
+test("ehdotaToinenKortti nostaa eri kortin kuin esillä olevan, samasta ryhmän pakasta", () => {
+  const tila = uusiTila();
+  const esillaOlevaId = tila.audienssipakat.armeija[0];
+  const uusi = ehdotaToinenKortti(tila, audienssikortit, "armeija", esillaOlevaId);
+  assert.notEqual(uusi.id, esillaOlevaId);
+  assert.equal(audienssikortit.armeija.some(k => k.id === uusi.id), true);
+  // Ehdotus itsessään ei kuluta kumpaakaan korttia - vain nostaa vaihtoehdon.
+  assert.equal(tila.audienssipakat.armeija.length, audienssikortit.armeija.length);
+});
+
+test("ehdotaToinenKortti palauttaa null kun ryhmän pakassa ei ole muuta tarjottavaa", () => {
+  const tila = uusiTila();
+  tila.audienssipakat.armeija = ["A1"];
+  const uusi = ehdotaToinenKortti(tila, audienssikortit, "armeija", "A1");
+  assert.equal(uusi, null);
+});
+
+test("ohitaAudienssi laskee esittäjän suosiota yhdellä eikä kuluta korttia", () => {
+  const tila = uusiTila();
+  const alkuperainenMaara = tila.audienssipakat.armeija.length;
+  ohitaAudienssi(tila, "armeija");
+  assert.equal(tila.ryhmat.armeija.suosio, 6); // 7 - 1
+  assert.equal(tila.audienssipakat.armeija.length, alkuperainenMaara);
+});
+
+test("ohitaAudienssi ei laske suosiota alle nollan", () => {
+  const tila = uusiTila();
+  tila.ryhmat.armeija.suosio = 0;
+  ohitaAudienssi(tila, "armeija");
+  assert.equal(tila.ryhmat.armeija.suosio, 0);
 });

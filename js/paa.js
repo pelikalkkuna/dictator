@@ -260,7 +260,7 @@ function suoritaAudienssivaihe() {
     return;
   }
 
-  nykyinenAudienssi = tulos;
+  nykyinenAudienssi = { ryhmaAvain: tulos.ryhmaAvain, kortti: tulos.kortti, ehdotettu: false };
   piirraAudienssi(nykyinenAudienssi);
   odottaaValintaa = true;
 }
@@ -272,7 +272,7 @@ function ratkaiseAudienssi(hyvaksytty) {
   const ratkaistu = nykyinenAudienssi;
 
   if (hyvaksytty) {
-    hyvaksyAudienssi(pelitila, ratkaistu.kortti);
+    hyvaksyAudienssi(pelitila, ratkaistu.ryhmaAvain, ratkaistu.kortti);
     tarkistaSotalaukaisijat(ratkaistu.kortti);
   } else {
     hylkaaAudienssi(pelitila, ratkaistu.ryhmaAvain, ratkaistu.kortti);
@@ -287,17 +287,62 @@ function ratkaiseAudienssi(hyvaksytty) {
   paataVaihe();
 }
 
-// GDD 1.5: swipe-mekaniikka audiensseissa (oikealle = kyllä, vasemmalle = ei).
+// "Menkää pois": pelaaja ei käsittele vaatimusta lainkaan. Sama polku toimii myös epäonnistuneen
+// "Ehdota jotain muuta" -yrityksen laskeutumispisteenä (ks. ehdotaAudienssinVaihtoa alla).
+function ohitaAudienssiKortti() {
+  if (!onkoVaiheessa("audienssi")) return;
+  if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi || nykyinenAudienssi.tyhja) return;
+
+  const ratkaistu = nykyinenAudienssi;
+  ohitaAudienssi(pelitila, ratkaistu.ryhmaAvain);
+
+  nykyinenAudienssi = null;
+  odottaaValintaa = false;
+
+  piirraKaikki();
+  piirraAudienssi({ ohitettu: true, ryhmaAvain: ratkaistu.ryhmaAvain, kortti: ratkaistu.kortti });
+
+  paataVaihe();
+}
+
+// "Ehdota jotain muuta": sallittu kerran per audienssi. Toinen yritys - tai tilanne jossa
+// ryhmän pakassa ei ole enää muuta tarjottavaa - ohjautuu automaattisesti Skipiksi (Sasu,
+// elokuu 2026: "delegaatio tuumaa että he joutuvat nyt lähteä miettimään lisää").
+function ehdotaAudienssinVaihtoa() {
+  if (!onkoVaiheessa("audienssi")) return;
+  if (!nykyinenAudienssi || nykyinenAudienssi.pakkoEi || nykyinenAudienssi.tyhja) return;
+
+  if (nykyinenAudienssi.ehdotettu) {
+    ohitaAudienssiKortti();
+    return;
+  }
+
+  const uusiKortti = ehdotaToinenKortti(pelitila, audienssikortit, nykyinenAudienssi.ryhmaAvain, nykyinenAudienssi.kortti.id);
+  if (!uusiKortti) {
+    ohitaAudienssiKortti();
+    return;
+  }
+
+  nykyinenAudienssi = { ryhmaAvain: nykyinenAudienssi.ryhmaAvain, kortti: uusiKortti, ehdotettu: true };
+  piirraAudienssi(nykyinenAudienssi);
+}
+
+// GDD 1.5 + Sasu (elokuu 2026): swipe-mekaniikka audiensseissa - oikealle = kyllä, vasemmalle =
+// ei, ylös = ehdota jotain muuta, alas = menkää pois. Diagonaalisessa vedossa suurempi
+// siirtymäakseli (vaaka vs. pysty) ratkaisee kumpi pari on kyseessä.
 function alustaAudienssiSwipe() {
   const audienssiEl = document.getElementById("audienssi");
   const SWIPE_RAJA = 80;
   let alkuX = null;
-  let siirtyma = 0;
+  let alkuY = null;
+  let siirtymaX = 0;
+  let siirtymaY = 0;
 
   function paivitaAsento() {
     audienssiEl.style.transition = "none";
-    audienssiEl.style.transform = "translateX(" + siirtyma + "px) rotate(" + (siirtyma / 20) + "deg)";
-    audienssiEl.style.opacity = String(1 - Math.min(Math.abs(siirtyma) / 400, 0.6));
+    audienssiEl.style.transform = "translate(" + siirtymaX + "px, " + siirtymaY + "px) rotate(" + (siirtymaX / 20) + "deg)";
+    const etaisyys = Math.max(Math.abs(siirtymaX), Math.abs(siirtymaY));
+    audienssiEl.style.opacity = String(1 - Math.min(etaisyys / 400, 0.6));
   }
 
   function nollaaAsento() {
@@ -312,28 +357,46 @@ function alustaAudienssiSwipe() {
     // korttiin, jolloin napin click-tapahtuma jää kokonaan syntymättä.
     if (e.target.closest("button")) return;
     alkuX = e.clientX;
+    alkuY = e.clientY;
     audienssiEl.setPointerCapture(e.pointerId);
   });
 
   audienssiEl.addEventListener("pointermove", (e) => {
     if (alkuX === null) return;
-    siirtyma = e.clientX - alkuX;
+    siirtymaX = e.clientX - alkuX;
+    siirtymaY = e.clientY - alkuY;
     paivitaAsento();
   });
 
   function lopetaSwipe() {
     if (alkuX === null) return;
-    const paatettySiirtyma = siirtyma;
+    const paatettyX = siirtymaX;
+    const paatettyY = siirtymaY;
     alkuX = null;
-    siirtyma = 0;
+    alkuY = null;
+    siirtymaX = 0;
+    siirtymaY = 0;
 
-    if (paatettySiirtyma > SWIPE_RAJA) {
-      ratkaiseAudienssi(true);
-    } else if (paatettySiirtyma < -SWIPE_RAJA) {
-      ratkaiseAudienssi(false);
+    if (Math.abs(paatettyX) > Math.abs(paatettyY)) {
+      if (paatettyX > SWIPE_RAJA) {
+        ratkaiseAudienssi(true);
+        return;
+      }
+      if (paatettyX < -SWIPE_RAJA) {
+        ratkaiseAudienssi(false);
+        return;
+      }
     } else {
-      nollaaAsento();
+      if (paatettyY < -SWIPE_RAJA) {
+        ehdotaAudienssinVaihtoa();
+        return;
+      }
+      if (paatettyY > SWIPE_RAJA) {
+        ohitaAudienssiKortti();
+        return;
+      }
     }
+    nollaaAsento();
   }
 
   audienssiEl.addEventListener("pointerup", lopetaSwipe);
@@ -625,6 +688,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("hyvaksy-nappi").addEventListener("click", () => ratkaiseAudienssi(true));
   document.getElementById("hylkaa-nappi").addEventListener("click", () => ratkaiseAudienssi(false));
+  document.getElementById("ehdota-nappi").addEventListener("click", ehdotaAudienssinVaihtoa);
+  document.getElementById("menkaa-pois-nappi").addEventListener("click", ohitaAudienssiKortti);
 
   // Vapaaehtoinen vaikutusten esikatselu ennen päätöstä (Sasu, pelitestaus).
   document.getElementById("audienssi-vaikutukset-nappi").addEventListener("click", (e) => {

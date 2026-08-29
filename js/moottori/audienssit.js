@@ -1,8 +1,17 @@
 // GDD 4.1: audienssin mekaniikka.
+// Sasu (elokuu 2026, GDD:n ulkopuolinen mekaniikka, harkittu tietoisesti tässä vaiheessa kun
+// moottori on vielä perustasolla): audienssikortti on nelisuuntainen. Oikealle/vasemmalle =
+// Kyllä/Ei (kuluttaa kortin pakasta pysyvästi). Ylös = "Ehdota jotain muuta", sallittu kerran
+// per audienssi - delegaatio nostaa toisen kortin OMASTA pakastaan, eikä ensimmäinen kortti kulu
+// (se voi tulla vastaan myöhemmin). Toinen ehdotusyritys samassa audienssissa - tai ensimmäinenkin
+// jos ryhmän pakassa ei ole enää muuta tarjottavaa - muuttuu automaattisesti "Menkää pois"
+// -ohitukseksi. Alas = "Menkää pois" (ohitus): -1 suosiota, kortti ei kulu.
 
 if (typeof module !== "undefined") {
   var { rajaaMittari } = require("./mittarit.js");
 }
+
+const OHITUKSEN_SUOSIOMUUTOS = -1;
 
 function luoAudienssipakat(kortitData) {
   return {
@@ -26,8 +35,10 @@ function etsiKortti(kortitData, ryhmaAvain, korttiId) {
   return kortitData[ryhmaAvain].find(k => k.id === korttiId);
 }
 
-// Poimii D3:n mukaisen ryhmän kortin pakasta, heittää uudelleen jos ryhmän pakka on tyhjä.
-// Palauttaa null jos kaikkien kolmen ryhmän pakat ovat tyhjät (ei audienssia tässä kuussa).
+// Poimii D3:n mukaisen ryhmän kortin pakasta (muttei poista sitä - kortti kuluu vasta kun se
+// kuitataan hyvaksyAudienssi- tai hylkaaAudienssi-funktiolla), heittää uudelleen jos ryhmän
+// pakka on tyhjä. Palauttaa null jos kaikkien kolmen ryhmän pakat ovat tyhjät (ei audienssia
+// tässä kuussa).
 function valitseAudienssi(pelitila, kortitData, heittoFn) {
   const ryhmat = ["armeija", "talonpojat", "maanomistajat"];
   const kaikkiTyhjia = ryhmat.every(r => pelitila.audienssipakat[r].length === 0);
@@ -41,11 +52,30 @@ function valitseAudienssi(pelitila, kortitData, heittoFn) {
   } while (pelitila.audienssipakat[ryhmaAvain].length === 0);
 
   const pakka = pelitila.audienssipakat[ryhmaAvain];
-  const indeksi = Math.floor(Math.random() * pakka.length);
-  const korttiId = pakka.splice(indeksi, 1)[0];
+  const korttiId = pakka[Math.floor(Math.random() * pakka.length)];
   const kortti = etsiKortti(kortitData, ryhmaAvain, korttiId);
 
   return { ryhmaAvain, kortti };
+}
+
+// "Ehdota jotain muuta": nostaa saman ryhmän pakasta jonkin muun kortin kuin sen joka on jo
+// esillä. Palauttaa null jos ryhmän pakassa ei ole muuta tarjottavaa - kutsuja käsittelee sen
+// silloin "Menkää pois" -ohituksena.
+function ehdotaToinenKortti(pelitila, kortitData, ryhmaAvain, esillaOlevaId) {
+  const vaihtoehdot = pelitila.audienssipakat[ryhmaAvain].filter(id => id !== esillaOlevaId);
+  if (vaihtoehdot.length === 0) {
+    return null;
+  }
+  const korttiId = vaihtoehdot[Math.floor(Math.random() * vaihtoehdot.length)];
+  return etsiKortti(kortitData, ryhmaAvain, korttiId);
+}
+
+function poistaKortti(pelitila, ryhmaAvain, korttiId) {
+  const pakka = pelitila.audienssipakat[ryhmaAvain];
+  const indeksi = pakka.indexOf(korttiId);
+  if (indeksi !== -1) {
+    pakka.splice(indeksi, 1);
+  }
 }
 
 // Onko kortilla rahallinen vaatimus jonka kassakriisi estää (GDD 3.6).
@@ -72,7 +102,7 @@ function sovellaMittarimuutokset(pelitila, muutokset, kentta, heittoFn) {
   }
 }
 
-function hyvaksyAudienssi(pelitila, kortti, heittoFn) {
+function hyvaksyAudienssi(pelitila, ryhmaAvain, kortti, heittoFn) {
   sovellaMittarimuutokset(pelitila, kortti.suosio, "suosio", heittoFn);
   sovellaMittarimuutokset(pelitila, kortti.voima, "voima", heittoFn);
   if (typeof kortti.kertaluontoinen === "number") {
@@ -81,12 +111,21 @@ function hyvaksyAudienssi(pelitila, kortti, heittoFn) {
   if (typeof kortti.kuukausikulutMuutos === "number") {
     pelitila.kuukausikulut += kortti.kuukausikulutMuutos;
   }
+  poistaKortti(pelitila, ryhmaAvain, kortti.id);
 }
 
 function hylkaaAudienssi(pelitila, ryhmaAvain, kortti) {
   const esittajanSuosiomuutos = (kortti.suosio && kortti.suosio[ryhmaAvain]) || 0;
   const ryhma = pelitila.ryhmat[ryhmaAvain];
   ryhma.suosio = rajaaMittari(ryhma.suosio - esittajanSuosiomuutos);
+  poistaKortti(pelitila, ryhmaAvain, kortti.id);
+}
+
+// "Menkää pois": pelaaja ei käsittele vaatimusta lainkaan. Kortti ei kulu - se voi tulla vastaan
+// uudelleen myöhemmin, samoin epäonnistuneen toisen ehdotusyrityksen kortti kun se ohjautuu tänne.
+function ohitaAudienssi(pelitila, ryhmaAvain) {
+  const ryhma = pelitila.ryhmat[ryhmaAvain];
+  ryhma.suosio = rajaaMittari(ryhma.suosio + OHITUKSEN_SUOSIOMUUTOS);
 }
 
 if (typeof module !== "undefined") {
@@ -95,8 +134,10 @@ if (typeof module !== "undefined") {
     heitaD3,
     valitseAudienssiryhma,
     valitseAudienssi,
+    ehdotaToinenKortti,
     onkoPakkoEi,
     hyvaksyAudienssi,
-    hylkaaAudienssi
+    hylkaaAudienssi,
+    ohitaAudienssi
   };
 }

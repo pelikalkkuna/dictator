@@ -222,6 +222,11 @@ function piirraAudienssi(nykyinenAudienssi) {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus + " — PAKKO-EI (kassakriisi estää rahallisen vaatimuksen)";
     napitEl.style.display = "none";
     vihjeEl.style.display = "none";
+  } else if (nykyinenAudienssi.ohitettu) {
+    tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus
+      + " — OHITETTU: \"Ei nyt huvita, menkää pois!\" (−1 suosiota)";
+    napitEl.style.display = "none";
+    vihjeEl.style.display = "none";
   } else if (nykyinenAudienssi.ratkaistu) {
     tekstiEl.textContent = esittajanNimi + ": " + nykyinenAudienssi.kortti.vaatimus
       + " — " + (nykyinenAudienssi.hyvaksytty ? "HYVÄKSYTTY" : "HYLÄTTY");
