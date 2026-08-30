@@ -126,6 +126,8 @@ Huom: tiedostonimet suomeksi, ääkköset korvattu (`paatokset` eikä `päätök
 
 **Sääntöjen käsittelyn periaate:** Jos GDD sanoo että suosio laskee 3:lla, se laskee tasan 3:lla. Ei 2, ei 4. Numerot ovat tasapainosimuloitu. Jos säännössä on epäselvyyttä, kysy Sasulta — älä tulkitse itse.
 
+**Toteutustilanne ohjaa laajuutta (Sasu, elokuu 2026):** GDD:n alussa on `# Toteutustilanne` -osio kolmella luokalla: 1. Toteutetut, 2. Toteutusvaiheessa olevat, 3. Tulevat suunnitelmat. Sasu: "Nyt on parempi että tähän asti tehdyt asiat viedään valmiiksi saakka... Muutosten sijaan otetaan GDD ohjaamaan." Uusi idea (esim. keskustelussa syntynyt ehdotus) kirjataan AINA ensin luokkaan 3 eikä toteuteta suoraan — se nousee luokkaan 2 vasta kun sen toteutus aloitetaan, ja luokkaan 1 kun se toimii pelissä testattuna. Tämä osio päivitetään sekä docx:ään että GDD.md:ään aina kun toteutustilanne muuttuu (uusi valmis kokonaisuus, uusi aloitettu työ, uusi tuleva idea) — ei odoteta Sasun omaa docx-päivitystä, koska tämä on nimenomaan Claudelle annettu ylläpitovastuu poikkeuksena yllä olevaan työnkulkuun.
+
 ## UI-periaatteet (GDD 1.5)
 
 - Vaihe vaiheelta -navigointi: pelaaja etenee aina eteenpäin

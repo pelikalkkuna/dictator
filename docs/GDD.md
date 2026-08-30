@@ -6,6 +6,42 @@ Huhtikuu 2026
 Alkuperäinen peli: Don Priestley & Andy French
 DKTronics, 1983 | Commodore 64, ZX Spectrum
 
+# Toteutustilanne (elokuu 2026)
+Tämä osio seuraa TOTEUTUSTA erillään säännöistä, kolmessa luokassa. Periaate (Sasu, elokuu 2026): uusi idea kirjataan aina ensin luokkaan 3 eikä toteuteta suoraan. Kun sen toteutus alkaa, se siirtyy luokkaan 2, ja kun se toimii pelissä testattuna, luokkaan 1.
+## 1. Toteutetut
+GDD:n mukaiset osiot pelillisesti valmiina selaimessa:
+Runko, kassajärjestelmä, ryhmät ja mittarit (osiot 1–3)
+Audienssijärjestelmä, 42 korttia (osiot 4.1, 5)
+Presidentin päätökset, 19 korttia (osio 6)
+Uutisvaihe, 48 korttia, N1-eskalaatiokierre ja ehdolliset kortit (osiot 4.2, 7)
+Sota: pikasota (A1) ja eskalaatio (P1/D16), sodan ratkaisu, jälkitila ja velkavaihe (osio 8)
+Vallankumous, kaappaus, kapina ja puolustusvalinta (osio 9)
+Attentaatti (osio 10)
+Pako helikopterilla tai vuoristoon, ja pisteytys (osiot 11, 14)
+Poliisiraportti (osio 12)
+Salaisen poliisin kaksiosainen strategia (osio 13)
+Kuukausikierros vaihekoneena (ei enää yksinkertaistettu kierto)
+UI: swipe-audienssit, kosketusystävälliset napit, automaattinen vieritys, mobiilioptimointi
+Julkaisu GitHub Pagesiin, testit ajetaan automaattisesti ennen julkaisua
+Ensimmäiset tapahtumakuvat, 5/126 (A1–A5)
+
+GDD:n ULKOPUOLISET lisäykset jotka toimivat pelissä nyt (ei vielä kirjattu tämän dokumentin numeroituihin osioihin — yksityiskohdat CLAUDE.md:n muistiinpanoissa):
+Audienssikortti on nelisuuntainen: Kyllä/Ei:n lisäksi Ehdota jotain muuta (kortinvaihto kerran per audienssi) ja Menkää pois (skip, −1 suosiota, kortti ei kulu)
+Puolustusvalinnan taistelu on todennäköisyyspohjainen (pelaajan osuus yhteisvoimasta), ei osion 9.6 kirjaimellinen ~25 %
+Vuoristopako on todennäköisyyspohjainen (1 − sissien voima / 9), ei terävä raja
+Sodanjälkeisen REV STR -piikin paluu on nopeutuva-hidastuva, ei lineaarinen
+Poliisiraportti tarjotaan vain kerran kuussa, kuun viimeisenä toimintona — kuukausi on 5-vaiheinen, ei osion 4 kirjaimellinen 8-vaiheinen
+## 2. Toteutusvaiheessa olevat
+Tapahtumakuvien tuottaminen Geminillä: 5/126 valmis. Tämä on nyt etusijalla — uusia ominaisuuksia ei aloiteta ennen kuin kuvasto on pidemmällä.
+Pelitestaus jatkuu.
+## 3. Tulevat suunnitelmat
+Ideoituja, ei aloitettuja. Uusi idea kirjataan tähän eikä toteuteta ennen kuin tämä lista sanoo niin.
+Audienssin delegaatiokuvat: audienssin alussa näytetään delegaation kuva, joka vaihtuu ryhmän suosiotason mukaan (raivostuneesta hymyilevään). Kortin oma kuva siirtyy "paljastukseksi" vasta kun Kyllä/Ei-päätös on tehty. Avoimena: kuinka monta suosioporrasta, näytetäänkö paljastus jokaisen päätöstyypin jälkeen vai vain hyväksynnässä, onko paljastus hetkellinen vai oma jännitysjakso. (Keskusteltu Sasun kanssa elokuu 2026, ei aloitettu — kuvavelka menee edelle.)
+Muita nelisuuntaisen audienssikortin jatkokehitysideoita on mainittu, ei tarkennettu.
+Oikeat äänitiedostot jännitysjaksoihin nykyisten syntetisoitujen äänien tilalle — tekijänoikeuskysymys avoinna.
+Osion 11 täysi pako-VALINTA-ruutu (helikopteri/vuoristo valittavaksi ennen yritystä) — nyt pakoreitti valitaan automaattisesti.
+Kuvien paketointi GitHub Pagesiin lazy-latauksella kun kuvasto lähestyy valmista (~5 Mt).
+
 # Muutosloki V10 → V11
 Tämä versio konkretisoi V10:n avoimet säännöt pelattavaan muotoon. Suurin osa muutoksista koskee sotaa, suurvalta-apua, kriisinhallintaa ja taloutta.
 ## Vahvistetut säännöt
